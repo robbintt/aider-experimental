@@ -1,9 +1,6 @@
 import subprocess
 import sys
 
-import subprocess
-import sys
-
 from ..utils import format_messages
 from .base_prompts import CoderPrompts
 from .editblock_fenced_coder import EditBlockFencedCoder
@@ -30,6 +27,7 @@ class LLMCommandCoder(EditBlockFencedCoder):
             return
 
         self.partial_response_content = ""
+        self.partial_response_function_call = dict()
 
         # The prompt is the plain text of the messages.
         prompt = "\n".join(m["content"] for m in messages if m.get("content"))
