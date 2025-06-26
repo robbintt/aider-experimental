@@ -62,6 +62,15 @@ def get_parser(default_config_files, git_root):
         default=None,
         help="Specify the model to use for the main chat",
     )
+    group.add_argument(
+        "--llm-command",
+        metavar="COMMAND",
+        default=None,
+        help=(
+            "Specify a shell command to use for the LLM. The command should take the prompt as"
+            " stdin and return the response on stdout."
+        ),
+    )
 
     ##########
     group = parser.add_argument_group("API Keys and settings")
