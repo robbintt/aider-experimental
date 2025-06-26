@@ -131,6 +131,14 @@ class Coder:
         summarize_from_coder=True,
         **kwargs,
     ):
+        llm_command = kwargs.get("llm_command")
+        if llm_command:
+            from .llm_command_coder import LLMCommandCoder
+
+            res = LLMCommandCoder(main_model, io, **kwargs)
+            res.original_kwargs = dict(kwargs)
+            return res
+
         import aider.coders as coders
 
         if not main_model:
@@ -338,6 +346,7 @@ class Coder:
         file_watcher=None,
         auto_copy_context=False,
         auto_accept_architect=True,
+        llm_command=None,
     ):
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()

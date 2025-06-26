@@ -1,0 +1,87 @@
+import subprocess
+import sys
+
+from ..utils import format_messages
+from .base_coder import Coder
+
+
+class LLMCommandCoder(Coder):
+    def __init__(self, main_model, io, **kwargs):
+        self.llm_command = kwargs.get("llm_command")
+        if not self.llm_command:
+            raise ValueError("LLMCommandCoder requires llm_command")
+
+        # Some things require an edit_format, but it's not used for much.
+        # Set it to a valid value.
+        if "edit_format" not in kwargs or not kwargs["edit_format"]:
+            kwargs["edit_format"] = "whole"
+
+        super().__init__(main_model, io, **kwargs)
+        # some model settings are not applicable
+        self.stream = True  # llm_command is always streaming
+        self.main_model.streaming = True
+
+    def send(self, messages, model=None, functions=None):
+        if functions:
+            self.io.tool_error("LLMCommandCoder does not support functions.")
+            return
+
+        self.partial_response_content = ""
+
+        # The prompt is the formatted messages.
+        prompt = format_messages(messages)
+        self.io.log_llm_history("TO LLM", prompt)
+
+        try:
+            process = subprocess.Popen(
+                self.llm_command,
+                shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+            )
+
+            # Stream the prompt to the command
+            if prompt:
+                process.stdin.write(prompt)
+            process.stdin.close()
+
+            # Stream the output from the command
+            completion = process.stdout
+
+            for chunk in iter(lambda: completion.read(1), ""):
+                if not chunk:
+                    break
+
+                self.partial_response_content += chunk
+                if self.show_pretty():
+                    self.live_incremental_response(False)
+                else:
+                    try:
+                        sys.stdout.write(chunk)
+                    except UnicodeEncodeError:
+                        safe_text = chunk.encode(
+                            sys.stdout.encoding, errors="backslashreplace"
+                        ).decode(sys.stdout.encoding)
+                        sys.stdout.write(safe_text)
+                    sys.stdout.flush()
+                yield chunk
+
+            process.wait()
+            if process.returncode != 0:
+                stderr_output = process.stderr.read()
+                self.io.tool_error(f"LLM command failed with exit code {process.returncode}")
+                if stderr_output:
+                    self.io.tool_error(stderr_output)
+
+        except FileNotFoundError:
+            self.io.tool_error(f"The command '{self.llm_command}' was not found.")
+        except Exception as e:
+            self.io.tool_error(f"Error running llm_command: {e}")
+
+    def calculate_and_show_tokens_and_cost(self, messages, completion=None):
+        # We can't know the tokens or cost for a shell command.
+        self.usage_report = "Tokens: unknown, Cost: unknown for llm-command"
+        return
