@@ -761,67 +761,69 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         analytics.event("exit", reason="Listed models")
         return 0
 
-    if args.llm_command:
-        main_model = models.Model(args.llm_command)
-    else:
-        # Process any command line aliases
-        if args.alias:
-            for alias_def in args.alias:
-                # Split on first colon only
-                parts = alias_def.split(":", 1)
-                if len(parts) != 2:
-                    io.tool_error(f"Invalid alias format: {alias_def}")
-                    io.tool_output("Format should be: alias:model-name")
-                    analytics.event("exit", reason="Invalid alias format error")
-                    return 1
-                alias, model = parts
-                models.MODEL_ALIASES[alias.strip()] = model.strip()
+    # Process any command line aliases
+    if args.alias:
+        for alias_def in args.alias:
+            # Split on first colon only
+            parts = alias_def.split(":", 1)
+            if len(parts) != 2:
+                io.tool_error(f"Invalid alias format: {alias_def}")
+                io.tool_output("Format should be: alias:model-name")
+                analytics.event("exit", reason="Invalid alias format error")
+                return 1
+            alias, model = parts
+            models.MODEL_ALIASES[alias.strip()] = model.strip()
 
-        selected_model_name = select_default_model(args, io, analytics)
-        if not selected_model_name:
-            # Error message and analytics event are handled within select_default_model
-            # It might have already offered OAuth if no model/keys were found.
-            # If it failed here, we exit.
-            return 1
-        args.model = selected_model_name  # Update args with the selected model
+    selected_model_name = select_default_model(args, io, analytics)
+    if not selected_model_name:
+        # Error message and analytics event are handled within select_default_model
+        # It might have already offered OAuth if no model/keys were found.
+        # If it failed here, we exit.
+        return 1
+    args.model = selected_model_name  # Update args with the selected model
 
-        # Check if an OpenRouter model was selected/specified but the key is missing
-        if args.model.startswith("openrouter/") and not os.environ.get("OPENROUTER_API_KEY"):
-            io.tool_warning(
-                f"The specified model '{args.model}' requires an OpenRouter API key, which was not"
-                " found."
-            )
-            # Attempt OAuth flow because the specific model needs it
-            if offer_openrouter_oauth(io, analytics):
-                # OAuth succeeded, the key should now be in os.environ.
-                # Check if the key is now present after the flow.
-                if os.environ.get("OPENROUTER_API_KEY"):
-                    io.tool_output(
-                        "OpenRouter successfully connected."
-                    )  # Inform user connection worked
-                else:
-                    # This case should ideally not happen if offer_openrouter_oauth succeeded
-                    # but check defensively.
-                    io.tool_error(
-                        "OpenRouter authentication seemed successful, but the key is still missing."
-                    )
-                    analytics.event(
-                        "exit",
-                        reason="OpenRouter key missing after successful OAuth for specified model",
-                    )
-                    return 1
+    # Check if an OpenRouter model was selected/specified but the key is missing
+    if args.model.startswith("openrouter/") and not os.environ.get("OPENROUTER_API_KEY"):
+        io.tool_warning(
+            f"The specified model '{args.model}' requires an OpenRouter API key, which was not"
+            " found."
+        )
+        # Attempt OAuth flow because the specific model needs it
+        if offer_openrouter_oauth(io, analytics):
+            # OAuth succeeded, the key should now be in os.environ.
+            # Check if the key is now present after the flow.
+            if os.environ.get("OPENROUTER_API_KEY"):
+                io.tool_output(
+                    "OpenRouter successfully connected."
+                )  # Inform user connection worked
             else:
-                # OAuth failed or was declined by the user
+                # This case should ideally not happen if offer_openrouter_oauth succeeded
+                # but check defensively.
                 io.tool_error(
-                    f"Unable to proceed without an OpenRouter API key for model '{args.model}'."
+                    "OpenRouter authentication seemed successful, but the key is still missing."
                 )
-                io.offer_url(urls.models_and_keys, "Open documentation URL for more info?")
                 analytics.event(
                     "exit",
-                    reason="OpenRouter key missing for specified model and OAuth failed/declined",
+                    reason="OpenRouter key missing after successful OAuth for specified model",
                 )
                 return 1
+        else:
+            # OAuth failed or was declined by the user
+            io.tool_error(
+                f"Unable to proceed without an OpenRouter API key for model '{args.model}'."
+            )
+            io.offer_url(urls.models_and_keys, "Open documentation URL for more info?")
+            analytics.event(
+                "exit",
+                reason="OpenRouter key missing for specified model and OAuth failed/declined",
+            )
+            return 1
 
+    if args.llm_command:
+        # Create a dummy model, but let Coder.create make the LLMCommandCoder
+        main_model = models.Model(args.model)
+        main_model.name = args.llm_command
+    else:
         main_model = models.Model(
             args.model,
             weak_model=args.weak_model,
@@ -830,73 +832,73 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             verbose=args.verbose,
         )
 
-        # Check if deprecated remove_reasoning is set
-        if main_model.remove_reasoning is not None:
-            io.tool_warning(
-                "Model setting 'remove_reasoning' is deprecated, please use 'reasoning_tag' instead."
-            )
+    # Check if deprecated remove_reasoning is set
+    if main_model.remove_reasoning is not None:
+        io.tool_warning(
+            "Model setting 'remove_reasoning' is deprecated, please use 'reasoning_tag' instead."
+        )
 
-        # Set reasoning effort and thinking tokens if specified
-        if args.reasoning_effort is not None:
-            # Apply if check is disabled or model explicitly supports it
-            if not args.check_model_accepts_settings or (
-                main_model.accepts_settings and "reasoning_effort" in main_model.accepts_settings
+    # Set reasoning effort and thinking tokens if specified
+    if args.reasoning_effort is not None:
+        # Apply if check is disabled or model explicitly supports it
+        if not args.check_model_accepts_settings or (
+            main_model.accepts_settings and "reasoning_effort" in main_model.accepts_settings
+        ):
+            main_model.set_reasoning_effort(args.reasoning_effort)
+
+    if args.thinking_tokens is not None:
+        # Apply if check is disabled or model explicitly supports it
+        if not args.check_model_accepts_settings or (
+            main_model.accepts_settings and "thinking_tokens" in main_model.accepts_settings
+        ):
+            main_model.set_thinking_tokens(args.thinking_tokens)
+
+    # Show warnings about unsupported settings that are being ignored
+    if args.check_model_accepts_settings:
+        settings_to_check = [
+            {"arg": args.reasoning_effort, "name": "reasoning_effort"},
+            {"arg": args.thinking_tokens, "name": "thinking_tokens"},
+        ]
+
+        for setting in settings_to_check:
+            if setting["arg"] is not None and (
+                not main_model.accepts_settings
+                or setting["name"] not in main_model.accepts_settings
             ):
-                main_model.set_reasoning_effort(args.reasoning_effort)
+                io.tool_warning(
+                    f"Warning: {main_model.name} does not support '{setting['name']}', ignoring."
+                )
+                io.tool_output(
+                    f"Use --no-check-model-accepts-settings to force the '{setting['name']}'"
+                    " setting."
+                )
 
-        if args.thinking_tokens is not None:
-            # Apply if check is disabled or model explicitly supports it
-            if not args.check_model_accepts_settings or (
-                main_model.accepts_settings and "thinking_tokens" in main_model.accepts_settings
-            ):
-                main_model.set_thinking_tokens(args.thinking_tokens)
+    if args.copy_paste and args.edit_format is None:
+        if main_model.edit_format in ("diff", "whole", "diff-fenced"):
+            main_model.edit_format = "editor-" + main_model.edit_format
 
-        # Show warnings about unsupported settings that are being ignored
-        if args.check_model_accepts_settings:
-            settings_to_check = [
-                {"arg": args.reasoning_effort, "name": "reasoning_effort"},
-                {"arg": args.thinking_tokens, "name": "thinking_tokens"},
-            ]
+    if args.verbose:
+        io.tool_output("Model metadata:")
+        io.tool_output(json.dumps(main_model.info, indent=4))
 
-            for setting in settings_to_check:
-                if setting["arg"] is not None and (
-                    not main_model.accepts_settings
-                    or setting["name"] not in main_model.accepts_settings
-                ):
-                    io.tool_warning(
-                        f"Warning: {main_model.name} does not support '{setting['name']}', ignoring."
-                    )
-                    io.tool_output(
-                        f"Use --no-check-model-accepts-settings to force the '{setting['name']}'"
-                        " setting."
-                    )
+        io.tool_output("Model settings:")
+        for attr in sorted(fields(ModelSettings), key=lambda x: x.name):
+            val = getattr(main_model, attr.name)
+            val = json.dumps(val, indent=4)
+            io.tool_output(f"{attr.name}: {val}")
 
-        if args.copy_paste and args.edit_format is None:
-            if main_model.edit_format in ("diff", "whole", "diff-fenced"):
-                main_model.edit_format = "editor-" + main_model.edit_format
+    if args.show_model_warnings:
+        problem = models.sanity_check_models(io, main_model)
+        if problem:
+            analytics.event("model warning", main_model=main_model)
+            io.tool_output("You can skip this check with --no-show-model-warnings")
 
-        if args.verbose:
-            io.tool_output("Model metadata:")
-            io.tool_output(json.dumps(main_model.info, indent=4))
-
-            io.tool_output("Model settings:")
-            for attr in sorted(fields(ModelSettings), key=lambda x: x.name):
-                val = getattr(main_model, attr.name)
-                val = json.dumps(val, indent=4)
-                io.tool_output(f"{attr.name}: {val}")
-
-        if args.show_model_warnings:
-            problem = models.sanity_check_models(io, main_model)
-            if problem:
-                analytics.event("model warning", main_model=main_model)
-                io.tool_output("You can skip this check with --no-show-model-warnings")
-
-                try:
-                    io.offer_url(urls.model_warnings, "Open documentation url for more info?")
-                    io.tool_output()
-                except KeyboardInterrupt:
-                    analytics.event("exit", reason="Keyboard interrupt during model warnings")
-                    return 1
+            try:
+                io.offer_url(urls.model_warnings, "Open documentation url for more info?")
+                io.tool_output()
+            except KeyboardInterrupt:
+                analytics.event("exit", reason="Keyboard interrupt during model warnings")
+                return 1
 
     lint_cmds = parse_lint_cmds(args.lint_cmd, io)
     if lint_cmds is None:

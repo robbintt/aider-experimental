@@ -1,8 +1,12 @@
 import subprocess
 import sys
 
+import subprocess
+import sys
+
 from ..utils import format_messages
 from .base_coder import Coder
+from .base_prompts import CoderPrompts
 
 
 class LLMCommandCoder(Coder):
@@ -13,6 +17,7 @@ class LLMCommandCoder(Coder):
 
         kwargs.pop("edit_format", None)
         super().__init__(main_model, io, **kwargs)
+        self.gpt_prompts = CoderPrompts()
         # some model settings are not applicable
         self.stream = True  # llm_command is always streaming
         self.main_model.streaming = True
