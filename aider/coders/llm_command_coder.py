@@ -5,11 +5,12 @@ import subprocess
 import sys
 
 from ..utils import format_messages
-from .base_coder import Coder
 from .base_prompts import CoderPrompts
+from .editblock_fenced_coder import EditBlockFencedCoder
+from .editor_diff_fenced_prompts import EditorDiffFencedPrompts
 
 
-class LLMCommandCoder(Coder):
+class LLMCommandCoder(EditBlockFencedCoder):
     def __init__(self, main_model, io, **kwargs):
         self.llm_command = kwargs.get("llm_command")
         if not self.llm_command:
@@ -17,14 +18,11 @@ class LLMCommandCoder(Coder):
 
         self.edit_format = kwargs.pop("edit_format", "diff-fenced")
         super().__init__(main_model, io, **kwargs)
-        self.gpt_prompts = CoderPrompts()
+        self.gpt_prompts = EditorDiffFencedPrompts()
         # some model settings are not applicable
         self.stream = True  # llm_command is always streaming
         self.main_model.streaming = True
 
-    def get_edits(self, mode="update"):
-        # TODO: implement parsing of diff-fenced blocks
-        return []
 
     def send(self, messages, model=None, functions=None):
         if functions:
