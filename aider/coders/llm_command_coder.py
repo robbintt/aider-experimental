@@ -15,12 +15,16 @@ class LLMCommandCoder(Coder):
         if not self.llm_command:
             raise ValueError("LLMCommandCoder requires llm_command")
 
-        kwargs.pop("edit_format", None)
+        self.edit_format = kwargs.pop("edit_format", "diff-fenced")
         super().__init__(main_model, io, **kwargs)
         self.gpt_prompts = CoderPrompts()
         # some model settings are not applicable
         self.stream = True  # llm_command is always streaming
         self.main_model.streaming = True
+
+    def get_edits(self, mode="update"):
+        # TODO: implement parsing of diff-fenced blocks
+        return []
 
     def send(self, messages, model=None, functions=None):
         if functions:
@@ -60,14 +64,9 @@ class LLMCommandCoder(Coder):
                 if self.show_pretty():
                     self.live_incremental_response(False)
                 else:
-                    try:
-                        sys.stdout.write(chunk)
-                    except UnicodeEncodeError:
-                        safe_text = chunk.encode(
-                            sys.stdout.encoding, errors="backslashreplace"
-                        ).decode(sys.stdout.encoding)
-                        sys.stdout.write(safe_text)
-                    sys.stdout.flush()
+                    # sys.stdout.write(chunk)
+                    # sys.stdout.flush()
+                    pass
                 yield chunk
 
             process.wait()

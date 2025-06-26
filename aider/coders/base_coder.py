@@ -135,6 +135,7 @@ class Coder:
         if llm_command:
             from .llm_command_coder import LLMCommandCoder
 
+            kwargs["edit_format"] = edit_format
             res = LLMCommandCoder(main_model, io, **kwargs)
             res.original_kwargs = dict(kwargs)
             return res

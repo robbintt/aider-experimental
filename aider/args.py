@@ -65,10 +65,13 @@ def get_parser(default_config_files, git_root):
     group.add_argument(
         "--llm-command",
         metavar="COMMAND",
+        nargs="?",
+        const="gemini-cli",
         default=None,
         help=(
             "Specify a shell command to use for the LLM. The command should take the prompt as"
-            " stdin and return the response on stdout."
+            " stdin and return the response on stdout. If used without an argument, it defaults to"
+            " 'gemini-cli'."
         ),
     )
 
