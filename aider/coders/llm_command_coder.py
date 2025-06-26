@@ -11,11 +11,7 @@ class LLMCommandCoder(Coder):
         if not self.llm_command:
             raise ValueError("LLMCommandCoder requires llm_command")
 
-        # Some things require an edit_format, but it's not used for much.
-        # Set it to a valid value.
-        if "edit_format" not in kwargs or not kwargs["edit_format"]:
-            kwargs["edit_format"] = "whole"
-
+        kwargs.pop("edit_format", None)
         super().__init__(main_model, io, **kwargs)
         # some model settings are not applicable
         self.stream = True  # llm_command is always streaming
@@ -28,8 +24,8 @@ class LLMCommandCoder(Coder):
 
         self.partial_response_content = ""
 
-        # The prompt is the formatted messages.
-        prompt = format_messages(messages)
+        # The prompt is the plain text of the messages.
+        prompt = "\n".join(m["content"] for m in messages if m.get("content"))
         self.io.log_llm_history("TO LLM", prompt)
 
         try:
