@@ -31,6 +31,8 @@ class SwitchCoder(Exception):
     def __init__(self, placeholder=None, **kwargs):
         self.kwargs = kwargs
         self.placeholder = placeholder
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 class Commands:
