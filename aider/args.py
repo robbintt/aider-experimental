@@ -51,6 +51,7 @@ def get_parser(default_config_files, git_root):
             for c in _aider_coders.__all__
             if hasattr(c, "edit_format") and c.edit_format is not None
         }
+        | {"pkm"}
     )
     group = parser.add_argument_group("Main model")
     group.add_argument(

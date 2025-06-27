@@ -139,6 +139,10 @@ class Coder:
             else:
                 main_model = models.Model(models.DEFAULT_MODEL_NAME)
 
+        if edit_format == "pkm":
+            kwargs["pkm_mode"] = True
+            edit_format = "whole"
+
         if edit_format == "code":
             edit_format = None
         if edit_format is None:
