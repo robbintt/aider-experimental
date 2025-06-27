@@ -827,11 +827,6 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         verbose=args.verbose,
     )
 
-    if args.pkm:
-        if args.edit_format and args.edit_format not in (None, "whole"):
-            io.tool_warning(f"PKM mode is overriding edit format '{args.edit_format}' with 'whole'.")
-        args.edit_format = "whole"
-
     # Check if deprecated remove_reasoning is set
     if main_model.remove_reasoning is not None:
         io.tool_warning(
@@ -1019,11 +1014,6 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         io.tool_error(str(err))
         analytics.event("exit", reason="ValueError during coder creation")
         return 1
-
-    if args.pkm:
-        from aider.coders.pkm_prompts import PkmPrompts
-
-        coder.prompts = PkmPrompts()
 
     if return_coder:
         analytics.event("exit", reason="Returning coder object")
