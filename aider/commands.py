@@ -33,6 +33,8 @@ class SwitchCoder(Exception):
         self.placeholder = placeholder
         for key, value in kwargs.items():
             setattr(self, key, value)
+        if "show_announcements" not in kwargs:
+            self.show_announcements = True
 
 
 class Commands:
