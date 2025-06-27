@@ -338,6 +338,7 @@ class Coder:
         file_watcher=None,
         auto_copy_context=False,
         auto_accept_architect=True,
+        pkm_mode=False,
     ):
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()
@@ -352,6 +353,7 @@ class Coder:
 
         self.auto_copy_context = auto_copy_context
         self.auto_accept_architect = auto_accept_architect
+        self.pkm_mode = pkm_mode
 
         self.ignore_mentions = ignore_mentions
         if not self.ignore_mentions:
@@ -1225,7 +1227,11 @@ class Coder:
 
     def format_chat_chunks(self):
         self.choose_fence()
-        main_sys = self.fmt_system_prompt(self.gpt_prompts.main_system)
+        if self.pkm_mode:
+            system_prompt = prompts.pkm_system
+        else:
+            system_prompt = self.gpt_prompts.main_system
+        main_sys = self.fmt_system_prompt(system_prompt)
         if self.main_model.system_prompt_prefix:
             main_sys = self.main_model.system_prompt_prefix + "\n" + main_sys
 
