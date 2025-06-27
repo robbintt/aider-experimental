@@ -661,6 +661,12 @@ def get_parser(default_config_files, git_root):
         default=False,
     )
     group.add_argument(
+        "--pkm",
+        action="store_true",
+        default=False,
+        help="Use PKM mode for personal knowledge management (shortcut for --edit-format pkm).",
+    )
+    group.add_argument(
         "--copy-paste",
         action=argparse.BooleanOptionalAction,
         default=False,
