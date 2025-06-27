@@ -204,6 +204,7 @@ class Commands:
             pkm_mode = True
 
         raise SwitchCoder(
+            from_coder=self.coder,
             edit_format=edit_format,
             summarize_from_coder=summarize_from_coder,
             pkm_mode=pkm_mode,
@@ -1202,6 +1203,7 @@ class Commands:
         # Use the provided placeholder if any
         raise SwitchCoder(
             edit_format=self.coder.edit_format,
+            pkm_mode=self.coder.pkm_mode,
             summarize_from_coder=False,
             from_coder=coder,
             show_announcements=False,
@@ -1240,6 +1242,7 @@ class Commands:
         # Use the provided placeholder if any
         raise SwitchCoder(
             edit_format=self.coder.edit_format,
+            pkm_mode=self.coder.pkm_mode,
             summarize_from_coder=False,
             from_coder=coder,
             show_announcements=False,

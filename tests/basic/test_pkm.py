@@ -8,6 +8,7 @@ from aider.io import InputOutput
 class MockCoder:
     def __init__(self):
         self.edit_format = "udiff"
+        self.pkm_mode = False
 
 
 def test_cmd_pkm_no_args_switches_mode():
