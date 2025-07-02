@@ -1817,9 +1817,14 @@ class Coder:
             # Stream the output from the command
             completion = process.stdout
 
+            received_content = False
             for chunk in iter(lambda: completion.read(1), ""):
                 if not chunk:
                     break
+
+                if not received_content:
+                    self._stop_waiting_spinner()
+                    received_content = True
 
                 self.partial_response_content += chunk
                 if self.show_pretty():
