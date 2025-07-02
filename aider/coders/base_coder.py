@@ -5,6 +5,7 @@ import hashlib
 import json
 import locale
 import math
+import subprocess
 import mimetypes
 import os
 import platform
@@ -131,15 +132,6 @@ class Coder:
         summarize_from_coder=True,
         **kwargs,
     ):
-        llm_command = kwargs.get("llm_command")
-        if llm_command:
-            from .llm_command_coder import LLMCommandCoder
-
-            kwargs["edit_format"] = edit_format
-            res = LLMCommandCoder(main_model, io, **kwargs)
-            res.original_kwargs = dict(kwargs)
-            return res
-
         import aider.coders as coders
 
         if not main_model:
@@ -147,6 +139,10 @@ class Coder:
                 main_model = from_coder.main_model
             else:
                 main_model = models.Model(models.DEFAULT_MODEL_NAME)
+
+        llm_command = kwargs.get("llm_command")
+        if llm_command:
+            main_model.llm_command = llm_command
 
         if edit_format == "code":
             edit_format = None
@@ -1790,12 +1786,76 @@ class Coder:
         if added_fnames:
             return prompts.added_files.format(fnames=", ".join(added_fnames))
 
-    def send(self, messages, model=None, functions=None):
-        self.got_reasoning_content = False
-        self.ended_reasoning_content = False
+    def send_with_llm_command(self, messages, model=None, functions=None):
+        if functions:
+            self.io.tool_error("LLMCommandCoder does not support functions.")
+            return
 
+        self.partial_response_content = ""
+        self.partial_response_function_call = dict()
+
+        # The prompt is the plain text of the messages.
+        prompt = "\n".join(m["content"] for m in messages if m.get("content"))
+        self.io.log_llm_history("TO LLM", prompt)
+
+        try:
+            process = subprocess.Popen(
+                self.main_model.llm_command,
+                shell=True,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+            )
+
+            # Stream the prompt to the command
+            if prompt:
+                process.stdin.write(prompt)
+            process.stdin.close()
+
+            # Stream the output from the command
+            completion = process.stdout
+
+            for chunk in iter(lambda: completion.read(1), ""):
+                if not chunk:
+                    break
+
+                self.partial_response_content += chunk
+                if self.show_pretty():
+                    self.live_incremental_response(False)
+                else:
+                    # sys.stdout.write(chunk)
+                    # sys.stdout.flush()
+                    pass
+                yield chunk
+
+            process.wait()
+            if process.returncode != 0:
+                stderr_output = process.stderr.read()
+                self.io.tool_error(f"LLM command failed with exit code {process.returncode}")
+                if stderr_output:
+                    self.io.tool_error(stderr_output)
+
+        except FileNotFoundError:
+            self.io.tool_error(f"The command '{self.main_model.llm_command}' was not found.")
+        except Exception as e:
+            self.io.tool_error(f"Error running llm_command: {e}")
+
+    def send(self, messages, model=None, functions=None):
         if not model:
             model = self.main_model
+
+        if model.llm_command:
+            self.stream = True  # llm_command is always streaming
+            model.streaming = True
+            yield from self.send_with_llm_command(messages, model, functions)
+            # We can't know the tokens or cost for a shell command.
+            self.usage_report = "Tokens: unknown, Cost: unknown for llm-command"
+            return
+
+        self.got_reasoning_content = False
+        self.ended_reasoning_content = False
 
         self.partial_response_content = ""
         self.partial_response_function_call = dict()
