@@ -228,6 +228,8 @@ class ModelInfoManager:
         return dict()
 
     def get_model_info(self, model):
+        if model.startswith("llm-command:"):
+            return dict()
         cached_info = self.get_model_from_cached_json_db(model)
 
         litellm_info = None
@@ -611,6 +613,9 @@ class Model(ModelSettings):
         return litellm.encode(model=self.name, text=text)
 
     def token_count(self, messages):
+        if self.name.startswith("llm-command:"):
+            return 0
+
         if type(messages) is list:
             try:
                 return litellm.token_counter(model=self.name, messages=messages)
@@ -704,6 +709,9 @@ class Model(ModelSettings):
             return dict(keys_in_environment=[var], missing_keys=[])
 
     def validate_environment(self):
+        if self.name.startswith("llm-command:"):
+            return dict(keys_in_environment=True, missing_keys=[])
+
         res = self.fast_validate_environment()
         if res:
             return res
