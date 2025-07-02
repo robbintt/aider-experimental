@@ -311,6 +311,9 @@ class Model(ModelSettings):
     def __init__(
         self, model, weak_model=None, editor_model=None, editor_edit_format=None, verbose=False
     ):
+        if model == "llm-command":
+            model = "llm-command: llm-command"
+
         # Map any alias to its canonical name
         model = MODEL_ALIASES.get(model, model)
 
@@ -412,6 +415,11 @@ class Model(ModelSettings):
                 self.accepts_settings.append("reasoning_effort")
 
     def apply_generic_model_settings(self, model):
+        if model.startswith("llm-command:"):
+            self.edit_format = "whole"
+            self.weak_model_name = model
+            return
+
         if "/o3-mini" in model:
             self.edit_format = "diff"
             self.use_repo_map = True
