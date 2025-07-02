@@ -954,6 +954,59 @@ class Model(ModelSettings):
             os.environ[openai_api_key] = token
 
     def send_completion(self, messages, functions, stream, temperature=None):
+        if self.name.startswith("llm-command:"):
+            import hashlib
+            import json
+            import subprocess
+            from types import SimpleNamespace
+
+            if stream:
+                raise NotImplementedError("Streaming is not supported for llm-command models.")
+
+            command = self.name.split(":", 1)[1].strip()
+
+            last_message = ""
+            for msg in reversed(messages):
+                if msg["role"] == "user":
+                    last_message = msg["content"]
+                    break
+
+            try:
+                process = subprocess.run(
+                    command,
+                    input=last_message,
+                    capture_output=True,
+                    text=True,
+                    shell=True,
+                    timeout=request_timeout,
+                )
+                stdout = process.stdout
+                stderr = process.stderr
+                if process.returncode != 0:
+                    content = f"Command failed with return code {process.returncode}\n"
+                    if stdout:
+                        content += f"STDOUT:\n{stdout}\n"
+                    if stderr:
+                        content += f"STDERR:\n{stderr}\n"
+                else:
+                    content = stdout
+                    if stderr:
+                        content += f"\nSTDERR:\n{stderr}"
+
+            except FileNotFoundError as e:
+                content = f"Error running command: {e}"
+            except subprocess.TimeoutExpired:
+                content = f"Command timed out after {request_timeout} seconds."
+
+            message = SimpleNamespace(content=content, role="assistant", tool_calls=None)
+            choice = SimpleNamespace(message=message)
+            mock_response = SimpleNamespace(choices=[choice])
+
+            key = json.dumps(dict(model=self.name, messages=messages), sort_keys=True).encode()
+            hash_object = hashlib.sha1(key)
+
+            return hash_object, mock_response
+
         if os.environ.get("AIDER_SANITY_CHECK_TURNS"):
             sanity_check_messages(messages)
 
