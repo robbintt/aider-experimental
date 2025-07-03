@@ -774,12 +774,15 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             alias, model = parts
             models.MODEL_ALIASES[alias.strip()] = model.strip()
 
-    selected_model_name = select_default_model(args, io, analytics)
-    if not selected_model_name and not args.llm_command:
-        # Error message and analytics event are handled within select_default_model
-        # It might have already offered OAuth if no model/keys were found.
-        # If it failed here, we exit.
-        return 1
+    if not args.llm_command:
+        selected_model_name = select_default_model(args, io, analytics)
+        if not selected_model_name:
+            # Error message and analytics event are handled within select_default_model
+            # It might have already offered OAuth if no model/keys were found.
+            # If it failed here, we exit.
+            return 1
+    else:
+        selected_model_name = args.model
     args.model = selected_model_name  # Update args with the selected model
 
     # Check if an OpenRouter model was selected/specified but the key is missing
