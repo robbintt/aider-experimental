@@ -1788,7 +1788,7 @@ class Coder:
 
     def send_with_llm_command(self, messages, model=None, functions=None):
         if functions:
-            self.io.tool_error("LLMCommandCoder does not support functions.")
+            self.io.tool_error("llm_command does not support functions.")
             return
 
         self.partial_response_content = ""
