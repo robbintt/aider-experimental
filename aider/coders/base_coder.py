@@ -347,11 +347,10 @@ class Coder:
         file_watcher=None,
         auto_copy_context=False,
         auto_accept_architect=True,
-<<<<<<< HEAD
         llm_command=None,
-=======
         pkm_mode=False,
->>>>>>> 5a8aa5f9d67c12a37a16ed6b89c38f55a91b7f70
+        llm_command=None,
+        pkm_mode=False,
     ):
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()
