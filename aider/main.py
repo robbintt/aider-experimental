@@ -786,7 +786,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     args.model = selected_model_name  # Update args with the selected model
 
     # Check if an OpenRouter model was selected/specified but the key is missing
-    if args.model.startswith("openrouter/") and not os.environ.get("OPENROUTER_API_KEY"):
+    if args.model and args.model.startswith("openrouter/") and not os.environ.get("OPENROUTER_API_KEY"):
         io.tool_warning(
             f"The specified model '{args.model}' requires an OpenRouter API key, which was not"
             " found."
