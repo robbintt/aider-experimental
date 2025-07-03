@@ -775,7 +775,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             models.MODEL_ALIASES[alias.strip()] = model.strip()
 
     selected_model_name = select_default_model(args, io, analytics)
-    if not selected_model_name:
+    if not selected_model_name and not args.llm_command:
         # Error message and analytics event are handled within select_default_model
         # It might have already offered OAuth if no model/keys were found.
         # If it failed here, we exit.
