@@ -1791,6 +1791,21 @@ class Coder:
             self.io.tool_error("llm_command does not support functions.")
             return
 
+        if not model:
+            model = self.main_model
+
+        command = getattr(model, "llm_command", None)
+        if not command:
+            is_llm_command_model = model.name.startswith(
+                "llm-command:"
+            ) or model.name.startswith("llm:command")
+            if is_llm_command_model:
+                command = model.name.split(":", 1)[1].strip()
+
+        if not command:
+            self.io.tool_error(f"Could not determine command for {model.name}")
+            return
+
         self.partial_response_content = ""
         self.partial_response_function_call = dict()
 
@@ -1800,7 +1815,7 @@ class Coder:
 
         try:
             process = subprocess.Popen(
-                self.main_model.llm_command,
+                command,
                 shell=True,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -1843,7 +1858,7 @@ class Coder:
                     self.io.tool_error(stderr_output)
 
         except FileNotFoundError:
-            self.io.tool_error(f"The command '{self.main_model.llm_command}' was not found.")
+            self.io.tool_error(f"The command '{command}' was not found.")
         except Exception as e:
             self.io.tool_error(f"Error running llm_command: {e}")
 
@@ -1851,7 +1866,10 @@ class Coder:
         if not model:
             model = self.main_model
 
-        if model.llm_command:
+        is_llm_command_model = model.name.startswith("llm-command:") or model.name.startswith(
+            "llm:command"
+        )
+        if getattr(model, "llm_command", None) or is_llm_command_model:
             self.stream = True  # llm_command is always streaming
             model.streaming = True
             yield from self.send_with_llm_command(messages, model, functions)

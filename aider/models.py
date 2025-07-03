@@ -417,7 +417,7 @@ class Model(ModelSettings):
                 self.accepts_settings.append("reasoning_effort")
 
     def apply_generic_model_settings(self, model):
-        if model.startswith("llm-command:"):
+        if model.startswith("llm-command:") or model.startswith("llm:command"):
             self.edit_format = "whole"
             self.weak_model_name = model
             return
@@ -1008,7 +1008,10 @@ class Model(ModelSettings):
         return hash_object, res
 
     def simple_send_with_retries(self, messages):
-        if self.name.startswith("llm-command:"):
+        is_llm_command = self.name.startswith("llm-command:") or self.name.startswith(
+            "llm:command"
+        )
+        if is_llm_command:
             import subprocess
 
             command = self.name.split(":", 1)[1].strip()
