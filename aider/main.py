@@ -822,7 +822,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     if args.llm_command:
         # Create a dummy model, but let Coder.create make the LLMCommandCoder
         main_model = models.Model(args.model)
-        main_model.name = "gemini-cli"
+        main_model.name = args.llm_command
         if not args.edit_format:
             args.edit_format = "diff-fenced"
     else:
