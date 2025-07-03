@@ -349,8 +349,6 @@ class Coder:
         auto_accept_architect=True,
         llm_command=None,
         pkm_mode=False,
-        llm_command=None,
-        pkm_mode=False,
     ):
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()
