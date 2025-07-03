@@ -824,7 +824,8 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     if args.llm_command:
         # Create a dummy model, but let Coder.create make the LLMCommandCoder
-        main_model = models.Model(args.model)
+        model_name = args.model or "llm-command"
+        main_model = models.Model(model_name)
         main_model.name = f"llm:command {args.llm_command}"
         if not args.edit_format:
             args.edit_format = "diff-fenced"
