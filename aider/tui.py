@@ -1,11 +1,23 @@
 import asyncio
 
 from textual.app import App, ComposeResult
+from textual.containers import Container
 from textual.message import Message
 from textual.widgets import Header, Footer, Input, RichLog
 
 class TuiApp(App):
     """Aider's Textual TUI."""
+
+    CSS = """
+    #sidebar {
+        dock: left;
+        width: 40;
+        overflow: auto;
+    }
+    #chat-container {
+        overflow: auto;
+    }
+    """
 
     class CoderReady(Message):
         """Posted when the Coder is ready."""
@@ -103,12 +115,15 @@ class TuiApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield RichLog(wrap=True, id="chat_log")
-        yield Input(
-            placeholder="Loading Coder...",
-            id="prompt_input",
-            disabled=True,
-        )
+        with Container():
+            Container(id="sidebar")
+            with Container(id="chat-container"):
+                yield RichLog(wrap=True, id="chat_log")
+                yield Input(
+                    placeholder="Loading Coder...",
+                    id="prompt_input",
+                    disabled=True,
+                )
         yield Footer()
 
 def run_tui(args):

@@ -153,7 +153,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 
 **Goal:** Introduce the core interactive elements that provide a superior experience to the CLI.
 
-- [ ] **Task 2.1: Implement the Main UI Layout**
+- [x] **Task 2.1: Implement the Main UI Layout**
 *   **Action:** Refactor the `compose` method to create a three-pane layout: a sidebar for controls, a main area for the chat, and a footer for key bindings.
 *   **Implementation:** Use Textual's `Container` widgets with `dock` styling.
 *   **Verification:** The TUI should now display distinct regions for the sidebar and main content, even if the sidebar is empty.
