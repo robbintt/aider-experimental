@@ -39,13 +39,13 @@ class AiderCommandProvider(Provider):
 
         matcher = self.matcher(query)
 
+        test_help = "Run tests with configured test command"
+        if self.app.coder.test_cmd:
+            test_help = f"Run tests with `{self.app.coder.test_cmd}`"
+
         command_list = [
             ("Commit", self.app.do_commit, "Commit changes with suggested message"),
-            (
-                "Test",
-                self.app.do_run_test,
-                f"Run tests with `{self.app.coder.test_cmd}`",
-            ),
+            ("Test", self.app.do_run_test, test_help),
             ("Lint", self.app.do_lint, "Run linter"),
         ]
 
@@ -64,13 +64,17 @@ class TuiApp(App):
     """Aider's Textual TUI."""
 
     CSS = """
+    #app-body {
+        layout: horizontal;
+    }
     #sidebar {
-        dock: left;
         width: 40;
         overflow: auto;
     }
     #chat-container {
-        overflow: auto;
+        width: 1fr;
+        display: flex;
+        flex-direction: column;
     }
     #chat_log {
         height: 1fr;
@@ -312,8 +316,8 @@ class TuiApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Container():
-            Container(id="sidebar")
+        with Container(id="app-body"):
+            yield Container(id="sidebar")
             with Container(id="chat-container"):
                 yield RichLog(wrap=True, id="chat_log")
                 yield Input(
