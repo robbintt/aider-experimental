@@ -448,9 +448,7 @@ def sanity_check_repo(repo, io):
     return False
 
 
-def main(
-    argv=None, input=None, output=None, force_git_root=None, return_coder=False, in_tui=False
-):
+def main(argv=None, input=None, output=None, force_git_root=None, return_coder=False):
     report_uncaught_exceptions()
 
     if argv is None:
@@ -1173,11 +1171,10 @@ def main(
         analytics.event("exit", reason="Exit flag set")
         return
 
-    if args.tui and not in_tui:
+    if args.tui:
         try:
             from aider.tui import run_tui
-
-            run_tui(argv)
+            run_tui(args)
         except ImportError:
             io.tool_error("Please install the Textual dependencies to run the TUI:")
             io.tool_error("pip install 'aider-chat[tui]'")
