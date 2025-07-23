@@ -61,6 +61,7 @@ class TuiApp(App):
 
         # Filter out --tui from sys.argv to prevent recursion
         tui_args = [arg for arg in sys.argv[1:] if arg != "--tui"]
+        tui_args.append("--no-fancy-input")
 
         try:
             # main_runner is a synchronous function that does all the setup.
