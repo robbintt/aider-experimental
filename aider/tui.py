@@ -43,8 +43,8 @@ class TuiApp(App):
         """Setup the Coder in the background."""
         from aider.main import main as main_runner
 
-        # Pass all args except the script name itself
-        self.coder = await asyncio.to_thread(main_runner, self.args, return_coder=True)
+        # Let main_runner parse the args from sys.argv
+        self.coder = await asyncio.to_thread(main_runner, return_coder=True)
         self.post_message(self.CoderReady())
 
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
