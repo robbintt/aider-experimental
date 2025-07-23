@@ -1,11 +1,12 @@
 import asyncio
 import io
+import os
 import sys
 
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.message import Message
-from textual.widgets import Header, Footer, Input, RichLog
+from textual.widgets import DirectoryTree, Header, Footer, Input, RichLog
 
 
 class TtyStringIO(io.StringIO):
@@ -114,6 +115,10 @@ class TuiApp(App):
         prompt_input.focus()
         prompt_input.placeholder = "Enter your prompt..."
 
+        sidebar = self.query_one("#sidebar")
+        dir_tree = DirectoryTree(self.coder.root, id="file_browser")
+        sidebar.mount(dir_tree)
+
     def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
         """Update the chat log with a new message."""
         self.query_one("#chat_log", RichLog).write(message.text)
@@ -127,6 +132,14 @@ class TuiApp(App):
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.disabled = False
         prompt_input.focus()
+
+    async def on_directory_tree_file_selected(
+        self, event: DirectoryTree.FileSelected
+    ) -> None:
+        """Called when a file is selected in the directory tree."""
+        event.stop()
+        file_path = str(event.path)
+        self.run_worker(self.handle_file_selected(file_path), exclusive=False)
 
     async def on_input_submitted(self, event: Input.Submitted) -> None:
         """Handle the user submitting a prompt."""
@@ -156,6 +169,22 @@ class TuiApp(App):
     async def run_chat_task(self, prompt: str) -> None:
         """Run a chat task in a background thread."""
         await asyncio.to_thread(self._blocking_chat_runner, prompt)
+
+    def _blocking_handle_file_selected(self, file_path: str):
+        """Helper to add/remove file from chat in a thread."""
+        rel_path = os.path.relpath(file_path, self.coder.root)
+
+        in_chat_files = self.coder.get_inchat_relative_files()
+        if rel_path in in_chat_files:
+            self.coder.drop_rel_fname(rel_path)
+            self.post_message(self.UpdateChatLog(f"Removed {rel_path} from the chat."))
+        else:
+            self.coder.add_rel_fname(rel_path)
+            self.post_message(self.UpdateChatLog(f"Added {rel_path} from the chat."))
+
+    async def handle_file_selected(self, file_path: str) -> None:
+        """Handle file selection in a background thread."""
+        await asyncio.to_thread(self._blocking_handle_file_selected, file_path)
 
     def compose(self) -> ComposeResult:
         yield Header()

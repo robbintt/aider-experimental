@@ -158,7 +158,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** Use Textual's `Container` widgets with `dock` styling.
 *   **Verification:** The TUI should now display distinct regions for the sidebar and main content, even if the sidebar is empty.
 
-- [ ] **Task 2.2: Add an Interactive File Browser**
+- [x] **Task 2.2: Add an Interactive File Browser**
 *   **Action:** Add a `DirectoryTree` widget to the sidebar.
 *   **Implementation:**
     1.  Populate the `DirectoryTree` with the contents of the current git repository.
