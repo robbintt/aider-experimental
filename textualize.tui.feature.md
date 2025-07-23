@@ -91,7 +91,6 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
         # In aider/tui.py
         import sys
         from textual.widgets import RichLog, Input
-        from textual.worker import work
 
         # ... inside TuiApp class ...
         def __init__(self, args):
@@ -102,9 +101,8 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
         def on_mount(self) -> None:
             """Called when app starts."""
             # Use a worker to avoid blocking the UI during Coder setup
-            self.run_coder_setup()
+            self.run_worker(self.run_coder_setup)
 
-        @work
         def run_coder_setup(self) -> None:
             """Setup the Coder in the background."""
             from aider.main import main as main_runner
