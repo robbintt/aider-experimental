@@ -214,6 +214,15 @@ def check_streamlit_install(io):
     )
 
 
+def check_tui_install(io):
+    return utils.check_pip_install_extra(
+        io,
+        "textual",
+        "Please install the Textual dependencies to run the TUI",
+        ["aider-chat[tui]"],
+    )
+
+
 def write_streamlit_credentials():
     from streamlit.file_util import get_streamlit_file_path
 
@@ -1172,12 +1181,12 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         return
 
     if args.tui:
-        try:
-            from aider.tui import run_tui
-            run_tui(args)
-        except ImportError:
-            io.tool_error("Please install the Textual dependencies to run the TUI:")
-            io.tool_error("pip install 'aider-chat[tui]'")
+        if not check_tui_install(io):
+            analytics.event("exit", reason="TUI not installed")
+            return 1
+        from aider.tui import run_tui
+
+        run_tui(args)
         return 0
 
     analytics.event("cli session", main_model=main_model, edit_format=main_model.edit_format)
