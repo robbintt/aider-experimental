@@ -1,4 +1,5 @@
 import asyncio
+import copy
 
 from textual.app import App, ComposeResult
 from textual.containers import Container
@@ -54,17 +55,17 @@ class TuiApp(App):
 
     async def run_coder_setup(self) -> None:
         """Setup the Coder in the background."""
-        import sys
         from aider.main import main as main_runner
 
         self.log("Starting Coder setup...")
 
-        # Filter out --tui from sys.argv
-        tui_args = [arg for arg in sys.argv[1:] if arg != "--tui"]
+        # Prevent TUI recursion by passing a modified args object
+        coder_args = copy.deepcopy(self.args)
+        coder_args.tui = False
 
         try:
-            # Let main_runner parse the args from the filtered list
-            self.coder = await asyncio.to_thread(main_runner, tui_args, return_coder=True)
+            # Let main_runner initialize the coder with the modified args
+            self.coder = await asyncio.to_thread(main_runner, coder_args, return_coder=True)
             self.log("Coder setup finished.")
             self.post_message(self.CoderReady())
             self.log("Posted CoderReady message.")
