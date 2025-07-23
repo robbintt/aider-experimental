@@ -121,14 +121,21 @@ class TuiApp(App):
     def __init__(self, args):
         self.args = args
         self.coder = None
+        self._command_palette = None
         super().__init__()
 
     def on_mount(self) -> None:
         """Called when app starts."""
         self.log("TUI mounted.")
-        self.query_one(CommandPalette).add_provider(AiderCommandProvider(self))
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_worker(self.run_coder_setup)
+
+    def action_command_palette(self) -> None:
+        """Action to display the command palette."""
+        if self._command_palette is None:
+            self._command_palette = CommandPalette()
+            self._command_palette.add_provider(AiderCommandProvider(self))
+        self.push_screen(self._command_palette)
 
     async def run_coder_setup(self) -> None:
         """Setup the Coder in the background."""
@@ -322,7 +329,6 @@ class TuiApp(App):
                     disabled=True,
                 )
         yield Footer()
-        yield CommandPalette()
 
 def run_tui(args):
     app = TuiApp(args)
