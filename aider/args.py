@@ -674,6 +674,12 @@ def get_parser(default_config_files, git_root):
         default=False,
     )
     group.add_argument(
+        "--tui",
+        action="store_true",
+        help="Run the experimental Textual TUI.",
+        default=False,
+    )
+    group.add_argument(
         "--pkm",
         action="store_true",
         default=False,

@@ -1171,6 +1171,11 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         analytics.event("exit", reason="Exit flag set")
         return
 
+    if args.tui:
+        # This will be replaced in the next task
+        io.tool_output("TUI not yet implemented. Exiting.")
+        return 0
+
     analytics.event("cli session", main_model=main_model, edit_format=main_model.edit_format)
 
     while True:

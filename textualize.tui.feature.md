@@ -26,10 +26,10 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 
 **Goal:** Establish a functional, barebones TUI that can run a chat session with the AI and apply edits. This phase proves the core integration between Textual and the Aider `Coder`.
 
-- [ ] **Task 1.1: Create the TUI Entry Point**
+- [x] **Task 1.1: Create the TUI Entry Point**
 *   **Action:** Modify `aider/main.py` to add a `--tui` command-line flag. When this flag is used, Aider will attempt to launch the TUI.
 *   **Implementation:**
-    1.  In `get_parser()` within `aider/main.py`, add a new argument: `parser.add_argument("--tui", action="store_true", help="Run the experimental Textual TUI.")`.
+    1.  In `get_parser()` within `aider/args.py`, add a new argument: `parser.add_argument("--tui", action="store_true", help="Run the experimental Textual TUI.")`.
     2.  At the end of the `main()` function, right before the main `while True:` loop, add a block to handle the new flag:
         ```python
         if args.tui:
