@@ -7,6 +7,14 @@ from textual.containers import Container
 from textual.message import Message
 from textual.widgets import Header, Footer, Input, RichLog
 
+
+class TtyStringIO(io.StringIO):
+    """A StringIO that has a `isatty` method."""
+
+    def isatty(self) -> bool:
+        return False
+
+
 class TuiApp(App):
     """Aider's Textual TUI."""
 
@@ -72,8 +80,8 @@ class TuiApp(App):
             # We redirect stdin and stdout to in-memory streams to prevent
             # the Coder's setup process from interfering with the TUI's
             # control over the terminal.
-            input_stream = io.StringIO()
-            output_stream = io.StringIO()
+            input_stream = TtyStringIO()
+            output_stream = TtyStringIO()
 
             self.coder = await asyncio.to_thread(
                 main_runner,
@@ -93,7 +101,7 @@ class TuiApp(App):
 
             self.post_message(self.CoderReady())
             self.log("Posted CoderReady message.")
-        except Exception as e:
+        except BaseException as e:
             self.log(f"Error during Coder setup: {e}")
             # Also post to the chat log so the user can see it
             self.post_message(self.UpdateChatLog(f"Error during Coder setup: {e}"))
