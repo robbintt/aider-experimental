@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Input, RichLog
-from textual.worker import worker
+from textual.worker import work
 
 class TuiApp(App):
     """Aider's Textual TUI."""
@@ -17,7 +17,7 @@ class TuiApp(App):
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_coder_setup()
 
-    @worker
+    @work
     def run_coder_setup(self) -> None:
         """Setup the Coder in the background."""
         from aider.main import main as main_runner
