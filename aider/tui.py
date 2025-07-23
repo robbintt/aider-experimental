@@ -65,11 +65,11 @@ class TuiApp(App):
 
     CSS = """
     #sidebar {
-        dock: left;
         width: 40;
         overflow: auto;
     }
     #chat-container {
+        width: 1fr;
         overflow: auto;
     }
     #chat_log {
@@ -312,14 +312,15 @@ class TuiApp(App):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Container(id="sidebar")
-        with Container(id="chat-container"):
-            yield RichLog(wrap=True, id="chat_log")
-            yield Input(
-                placeholder="Loading Coder...",
-                id="prompt_input",
-                disabled=True,
-            )
+        with Horizontal():
+            yield Container(id="sidebar")
+            with Container(id="chat-container"):
+                yield RichLog(wrap=True, id="chat_log")
+                yield Input(
+                    placeholder="Loading Coder...",
+                    id="prompt_input",
+                    disabled=True,
+                )
         yield Footer()
         yield CommandPalette()
 
