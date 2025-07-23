@@ -4,9 +4,19 @@ import os
 import sys
 
 from textual.app import App, ComposeResult
+from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
-from textual.widgets import Button, Collapsible, DirectoryTree, Header, Footer, Input, RichLog
+from textual.widgets import (
+    Button,
+    Collapsible,
+    CommandPalette,
+    DirectoryTree,
+    Header,
+    Footer,
+    Input,
+    RichLog,
+)
 
 
 class TtyStringIO(io.StringIO):
@@ -14,6 +24,41 @@ class TtyStringIO(io.StringIO):
 
     def isatty(self) -> bool:
         return False
+
+
+class AiderCommandProvider(Provider):
+    """A command provider for Aider commands."""
+
+    def __init__(self, app: "TuiApp", *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.app = app
+
+    async def search(self, query: str) -> Hits:
+        """Search for commands."""
+        if not self.app.coder:
+            return
+
+        matcher = self.matcher(query)
+
+        command_list = [
+            ("Commit", self.app.do_commit, "Commit changes with suggested message"),
+            (
+                "Test",
+                self.app.do_run_test,
+                f"Run tests with `{self.app.coder.test_cmd}`",
+            ),
+            ("Lint", self.app.do_lint, "Run linter"),
+        ]
+
+        for name, action, help_text in command_list:
+            score = matcher.match(name)
+            if score > 0:
+                yield Hit(
+                    score,
+                    matcher.highlight(name),
+                    action,
+                    help=help_text,
+                )
 
 
 class TuiApp(App):
@@ -27,6 +72,13 @@ class TuiApp(App):
     }
     #chat-container {
         overflow: auto;
+    }
+    #chat_log {
+        height: 1fr;
+    }
+    #prompt_input {
+        dock: bottom;
+        height: 1;
     }
     .diff-container {
         height: auto;
@@ -62,7 +114,10 @@ class TuiApp(App):
     class ChatTaskDone(Message):
         """Posted when a chat task is done."""
 
-    BINDINGS = [("q", "quit", "Quit")]
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("ctrl+p", "command_palette", "Commands"),
+    ]
 
     def __init__(self, args):
         self.args = args
@@ -72,6 +127,7 @@ class TuiApp(App):
     def on_mount(self) -> None:
         """Called when app starts."""
         self.log("TUI mounted.")
+        self.query_one(CommandPalette).add_provider(AiderCommandProvider(self))
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_worker(self.run_coder_setup)
 
@@ -159,6 +215,30 @@ class TuiApp(App):
         prompt_input.disabled = False
         prompt_input.focus()
 
+    def do_commit(self) -> None:
+        """Command to commit changes."""
+        self.run_worker(self._blocking_commit, exclusive=True)
+
+    def _blocking_commit(self) -> None:
+        self.coder.commands.cmd_commit("")
+
+    def do_run_test(self) -> None:
+        """Command to run tests."""
+        self.run_worker(self._blocking_run_test, exclusive=True)
+
+    def _blocking_run_test(self) -> None:
+        if self.coder.test_cmd:
+            self.coder.commands.cmd_test(self.coder.test_cmd)
+        else:
+            self.post_message(self.UpdateChatLog("No test command configured."))
+
+    def do_lint(self) -> None:
+        """Command to run the linter."""
+        self.run_worker(self._blocking_lint, exclusive=True)
+
+    def _blocking_lint(self) -> None:
+        self.coder.commands.cmd_lint(None)
+
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
         if event.button.name == "undo":
@@ -243,6 +323,7 @@ class TuiApp(App):
                     disabled=True,
                 )
         yield Footer()
+        yield CommandPalette()
 
 def run_tui(args):
     app = TuiApp(args)

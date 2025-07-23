@@ -180,7 +180,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 
 **Goal:** Achieve full parity with the existing CLI's capabilities, making the TUI a complete replacement.
 
-- [ ] **Task 3.1: Implement the Command Palette**
+- [x] **Task 3.1: Implement the Command Palette**
 *   **Action:** Add a global `CommandPalette` and migrate the most common slash commands to it.
 *   **Implementation:**
     1.  Define a custom `CommandProvider`.
