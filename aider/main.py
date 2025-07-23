@@ -1172,8 +1172,12 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         return
 
     if args.tui:
-        # This will be replaced in the next task
-        io.tool_output("TUI not yet implemented. Exiting.")
+        try:
+            from aider.tui import run_tui
+            run_tui(args)
+        except ImportError:
+            io.tool_error("Please install the Textual dependencies to run the TUI:")
+            io.tool_error("pip install 'aider-chat[tui]'")
         return 0
 
     analytics.event("cli session", main_model=main_model, edit_format=main_model.edit_format)

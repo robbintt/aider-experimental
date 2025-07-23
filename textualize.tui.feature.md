@@ -42,7 +42,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Run `aider` (without the flag). It must launch the standard CLI.
     *   Run `aider --tui`. It should print the "not implemented" message and exit.
 
-- [ ] **Task 1.2: Implement the Basic TUI Application Shell**
+- [x] **Task 1.2: Implement the Basic TUI Application Shell**
 *   **Action:** Create the `aider/tui.py` file and implement a basic Textual `App` that can be launched from `main.py`.
 *   **Implementation:**
     1.  Create a new file: `aider/tui.py`.
