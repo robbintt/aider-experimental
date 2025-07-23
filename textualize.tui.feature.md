@@ -81,7 +81,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Run the test suite. All tests must pass.
     *   Run `aider --tui`. It should launch a blank Textual application with a header and footer. Pressing 'q' should exit.
 
-- [ ] **Task 1.3: Integrate the Aider Coder and Chat UI**
+- [x] **Task 1.3: Integrate the Aider Coder and Chat UI**
 *   **Action:** Instantiate the Aider `Coder` within the TUI and create a basic chat interface consisting of a log and an input box.
 *   **Implementation:**
     1.  In `aider/tui.py`, modify `TuiApp` to initialize the `Coder` on mount. Use the `main(return_coder=True)` function to reuse the existing setup logic from the CLI.
