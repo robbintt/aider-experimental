@@ -4,9 +4,9 @@ import os
 import sys
 
 from textual.app import App, ComposeResult
-from textual.containers import Container
+from textual.containers import Container, Horizontal
 from textual.message import Message
-from textual.widgets import DirectoryTree, Header, Footer, Input, RichLog
+from textual.widgets import Button, Collapsible, DirectoryTree, Header, Footer, Input, RichLog
 
 
 class TtyStringIO(io.StringIO):
@@ -28,6 +28,17 @@ class TuiApp(App):
     #chat-container {
         overflow: auto;
     }
+    .diff-container {
+        height: auto;
+    }
+    .diff-container Collapsible {
+        width: 1fr;
+    }
+    .diff-container Button {
+        width: 10;
+        height: 1;
+        margin: 0 1;
+    }
     """
 
     class CoderReady(Message):
@@ -43,9 +54,10 @@ class TuiApp(App):
     class ShowDiff(Message):
         """Posted to show a diff in the chat log."""
 
-        def __init__(self, diff: str) -> None:
+        def __init__(self, diff: str, commit_message: str) -> None:
             super().__init__()
             self.diff = diff
+            self.commit_message = commit_message
 
     class ChatTaskDone(Message):
         """Posted when a chat task is done."""
@@ -125,13 +137,41 @@ class TuiApp(App):
 
     def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
         """Show a diff in the chat log."""
-        self.query_one("#chat_log", RichLog).write(f"```diff\n{message.diff}\n```")
+        chat_container = self.query_one("#chat-container")
+
+        diff_log = RichLog(wrap=True, highlight=True)
+        diff_log.write(f"```diff\n{message.diff}\n```")
+
+        collapsible = Collapsible(
+            diff_log,
+            title=message.commit_message,
+            collapsed=True,
+        )
+
+        undo_button = Button("Undo", name="undo")
+
+        container = Horizontal(collapsible, undo_button, classes="diff-container")
+        chat_container.mount(container, before="#prompt_input")
 
     def on_chat_task_done(self, message: "TuiApp.ChatTaskDone") -> None:
         """Re-enable the prompt input when a chat task is done."""
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.disabled = False
         prompt_input.focus()
+
+    async def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button presses."""
+        if event.button.name == "undo":
+            # The button's parent is the Horizontal container
+            container = event.button.parent
+            event.button.disabled = True
+            self.run_worker(self.run_undo(container), exclusive=False)
+
+    async def run_undo(self, container_to_remove) -> None:
+        """Run the undo command."""
+        await asyncio.to_thread(self.coder.cmd_undo)
+        self.post_message(self.UpdateChatLog("Undo complete."))
+        await container_to_remove.remove()
 
     async def on_directory_tree_file_selected(
         self, event: DirectoryTree.FileSelected
@@ -162,7 +202,12 @@ class TuiApp(App):
             self.post_message(self.UpdateChatLog(chunk))
 
         if self.coder.last_aider_commit_diff:
-            self.post_message(self.ShowDiff(self.coder.last_aider_commit_diff))
+            self.post_message(
+                self.ShowDiff(
+                    self.coder.last_aider_commit_diff,
+                    self.coder.last_aider_commit_message,
+                )
+            )
 
         self.post_message(self.ChatTaskDone())
 

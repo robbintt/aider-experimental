@@ -167,7 +167,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     4.  Print a confirmation message to the chat log (e.g., "Added `file.py` to the chat.").
 *   **Verification:** The user can now see the file tree and add/remove files from the chat context by clicking on them.
 
-- [ ] **Task 2.3: Improve Chat Display**
+- [x] **Task 2.3: Improve Chat Display**
 *   **Action:** Enhance the chat log to be cleaner and more informative.
 *   **Implementation:**
     1.  When a diff is generated, display it inside a `Collapsible` widget. The title of the collapsible should be the commit message.
