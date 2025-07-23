@@ -89,6 +89,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     3.  The `Coder` must be run in a background `Worker` to prevent blocking the UI.
         ```python
         # In aider/tui.py
+        import asyncio
         import sys
         from textual.widgets import RichLog, Input
 
@@ -108,7 +109,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
             from aider.main import main as main_runner
 
             # Pass all args except the script name itself
-            self.coder = await self.run_in_thread(
+            self.coder = await asyncio.to_thread(
                 main_runner, self.args, return_coder=True
             )
             # You might want to post a message to the UI thread
@@ -129,7 +130,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:**
     1.  Define new `Message` classes for chat updates: `UpdateChatLog`, `ShowDiff`, and `ChatTaskDone`.
     2.  Implement the `on_input_submitted` handler. It should disable and clear the `Input`, then call `self.run_worker` to execute the main chat logic in the background.
-    3.  Create an `async` worker method `run_chat_task(prompt)`. This method will call `self.run_in_thread` to execute a synchronous, blocking helper method `_blocking_chat_runner(prompt)`. This prevents the chat processing from freezing the UI.
+    3.  Create an `async` worker method `run_chat_task(prompt)`. This method will use `asyncio.to_thread` to execute a synchronous, blocking helper method `_blocking_chat_runner(prompt)`. This prevents the chat processing from freezing the UI.
     4.  The `_blocking_chat_runner` will:
         *   Iterate through `self.coder.run_stream(prompt)`.
         *   For each chunk of the AI's response, use `self.post_message` to send an `UpdateChatLog` message.

@@ -1,3 +1,5 @@
+import asyncio
+
 from textual.app import App, ComposeResult
 from textual.message import Message
 from textual.widgets import Header, Footer, Input, RichLog
@@ -42,7 +44,7 @@ class TuiApp(App):
         from aider.main import main as main_runner
 
         # Pass all args except the script name itself
-        self.coder = await self.run_in_thread(main_runner, self.args, return_coder=True)
+        self.coder = await asyncio.to_thread(main_runner, self.args, return_coder=True)
         self.post_message(self.CoderReady())
 
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
@@ -93,7 +95,7 @@ class TuiApp(App):
 
     async def run_chat_task(self, prompt: str) -> None:
         """Run a chat task in a background thread."""
-        await self.run_in_thread(self._blocking_chat_runner, prompt)
+        await asyncio.to_thread(self._blocking_chat_runner, prompt)
 
     def compose(self) -> ComposeResult:
         yield Header()
