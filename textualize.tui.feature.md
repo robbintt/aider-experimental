@@ -137,12 +137,14 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
         *   Finally, send a `ChatTaskDone` message.
     5.  Implement message handlers (`on_update_chat_log`, `on_show_diff`, `on_chat_task_done`) to process the messages posted from the worker. These handlers will update the `RichLog` and re-enable the `Input` widget.
 *   **Verification:**
-    *   Run `aider --tui <file_to_edit>`.
+    *   Run `aider --tui`. The TUI should start without any files in chat.
+    *   In the input box, type `/add <path_to_a_file>` and press Enter. The file should be added to the chat context.
     *   Enter a prompt like "add a comment to the top of the file".
     *   The AI's response should stream into the log.
     *   A diff of the change should be displayed in the log.
     *   The file on disk should be updated.
     *   The input box should be disabled during processing and re-enabled afterward.
+    *   Alternatively, run `aider --tui <path_to_a_file>` and verify that making an edit works as described above.
 
 ---
 
