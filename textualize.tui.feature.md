@@ -79,47 +79,17 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Run the test suite. All tests must pass.
     *   Run `aider --tui`. It should launch a blank Textual application with a header and footer. Pressing 'q' should exit.
 
-- [ ] **Task 1.3: Integrate the Aider Coder and Chat UI**
+- [x] **Task 1.3: Integrate the Aider Coder and Chat UI**
 *   **Action:** Instantiate the Aider `Coder` within the TUI and create a basic chat interface consisting of a log and an input box.
 *   **Implementation:**
-    1.  In `aider/tui.py`, modify `TuiApp` to initialize the `Coder` on mount. Use the `main(return_coder=True)` function to reuse the existing setup logic from the CLI.
-    2.  Implement a `RichLog` for conversation history and an `Input` for user prompts.
-    3.  The `Coder` must be run in a background `Worker` to prevent blocking the UI.
-        ```python
-        # In aider/tui.py
-        import sys
-        from textual.widgets import RichLog, Input
-        from textual.worker import worker
-
-        # ... inside TuiApp class ...
-        def __init__(self, args):
-            self.args = args
-            self.coder = None
-            super().__init__()
-
-        def on_mount(self) -> None:
-            """Called when app starts."""
-            # Use a worker to avoid blocking the UI during Coder setup
-            self.run_coder_setup()
-
-        @worker
-        def run_coder_setup(self) -> None:
-            """Setup the Coder in the background."""
-            from aider.main import main as main_runner
-            # Pass all args except the script name itself
-            self.coder = main_runner(self.args, return_coder=True)
-            # You might want to post a message to the UI thread
-            # to enable the input once the coder is ready.
-        
-        def compose(self) -> ComposeResult:
-            yield Header()
-            yield RichLog(wrap=True, id="chat_log")
-            yield Input(placeholder="Enter your prompt...", id="prompt_input")
-            yield Footer()
-        ```
+    1.  In `aider/main.py`, modify `main()` to accept an `in_tui` flag to prevent recursive TUI launches. The `if args.tui:` block is changed to `if args.tui and not in_tui:`.
+    2.  The call to `run_tui` is changed from `run_tui(args)` to `run_tui(argv)` to pass the raw command-line arguments.
+    3.  In `aider/tui.py`, `run_tui` and `TuiApp.__init__` are updated to accept `argv`.
+    4.  `TuiApp` uses a background `worker` to call `main(argv, return_coder=True, in_tui=True)`, which safely initializes and returns the `Coder` instance without blocking the UI.
+    5.  The `compose` method is updated to include a `RichLog` for conversation history and an `Input` for user prompts.
 *   **Verification:**
     *   Run the test suite. All tests must pass.
-    *   Run `aider --tui`. The app should launch, and after a moment (while the coder loads), it should be ready for input.
+    *   Run `aider --tui`. The app should launch with a chat log and input box. After a moment (while the coder loads in the background), it should be ready for input.
 
 - [ ] **Task 1.4: Implement the Core Chat Loop**
 *   **Action:** Wire up the input box to send the user's prompt to the `Coder` worker and stream the response back to the `RichLog`.
