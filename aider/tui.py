@@ -8,6 +8,23 @@ class TuiApp(App):
     class CoderReady(Message):
         """Posted when the Coder is ready."""
 
+    class UpdateChatLog(Message):
+        """Posted to update the chat log with a new chunk of text."""
+
+        def __init__(self, text: str) -> None:
+            super().__init__()
+            self.text = text
+
+    class ShowDiff(Message):
+        """Posted to show a diff in the chat log."""
+
+        def __init__(self, diff: str) -> None:
+            super().__init__()
+            self.diff = diff
+
+    class ChatTaskDone(Message):
+        """Posted when a chat task is done."""
+
     BINDINGS = [("q", "quit", "Quit")]
 
     def __init__(self, args):
@@ -34,6 +51,49 @@ class TuiApp(App):
         prompt_input.disabled = False
         prompt_input.focus()
         prompt_input.placeholder = "Enter your prompt..."
+
+    def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
+        """Update the chat log with a new message."""
+        self.query_one("#chat_log", RichLog).write(message.text)
+
+    def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
+        """Show a diff in the chat log."""
+        self.query_one("#chat_log", RichLog).write(f"```diff\n{message.diff}\n```")
+
+    def on_chat_task_done(self, message: "TuiApp.ChatTaskDone") -> None:
+        """Re-enable the prompt input when a chat task is done."""
+        prompt_input = self.query_one("#prompt_input", Input)
+        prompt_input.disabled = False
+        prompt_input.focus()
+
+    async def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle the user submitting a prompt."""
+        prompt = event.value
+        if not prompt:
+            return
+
+        prompt_input = self.query_one("#prompt_input", Input)
+        prompt_input.clear()
+        prompt_input.disabled = True
+
+        chat_log = self.query_one("#chat_log", RichLog)
+        chat_log.write(f"> {prompt}")
+
+        self.run_worker(self.run_chat_task(prompt))
+
+    def _blocking_chat_runner(self, prompt: str) -> None:
+        """The synchronous, blocking method that runs the chat."""
+        for chunk in self.coder.run_stream(prompt):
+            self.post_message(self.UpdateChatLog(chunk))
+
+        if self.coder.last_aider_commit_diff:
+            self.post_message(self.ShowDiff(self.coder.last_aider_commit_diff))
+
+        self.post_message(self.ChatTaskDone())
+
+    async def run_chat_task(self, prompt: str) -> None:
+        """Run a chat task in a background thread."""
+        await self.run_in_thread(self._blocking_chat_runner, prompt)
 
     def compose(self) -> ComposeResult:
         yield Header()

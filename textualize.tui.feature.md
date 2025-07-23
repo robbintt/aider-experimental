@@ -124,7 +124,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Run the test suite. All tests must pass.
     *   Run `aider --tui`. The app should launch, and after a moment (while the coder loads), it should be ready for input.
 
-- [ ] **Task 1.4: Implement the Core Chat Loop**
+- [x] **Task 1.4: Implement the Core Chat Loop**
 *   **Action:** Wire up the input box to send the user's prompt to the `Coder` worker and stream the response back to the `RichLog`.
 *   **Implementation:**
     1.  Define new `Message` classes for chat updates: `UpdateChatLog`, `ShowDiff`, and `ChatTaskDone`.
