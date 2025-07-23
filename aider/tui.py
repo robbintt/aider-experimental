@@ -73,8 +73,6 @@ class TuiApp(App):
     }
     #chat-container {
         width: 1fr;
-        display: flex;
-        flex-direction: column;
     }
     #chat_log {
         height: 1fr;
