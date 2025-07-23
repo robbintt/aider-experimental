@@ -103,11 +103,14 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
             # Use a worker to avoid blocking the UI during Coder setup
             self.run_worker(self.run_coder_setup)
 
-        def run_coder_setup(self) -> None:
+        async def run_coder_setup(self) -> None:
             """Setup the Coder in the background."""
             from aider.main import main as main_runner
+
             # Pass all args except the script name itself
-            self.coder = main_runner(self.args, return_coder=True)
+            self.coder = await self.run_in_thread(
+                main_runner, self.args, return_coder=True
+            )
             # You might want to post a message to the UI thread
             # to enable the input once the coder is ready.
         
