@@ -48,6 +48,7 @@ class TuiApp(App):
 
     def on_mount(self) -> None:
         """Called when app starts."""
+        self.log("TUI mounted.")
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_worker(self.run_coder_setup)
 
@@ -56,15 +57,25 @@ class TuiApp(App):
         import sys
         from aider.main import main as main_runner
 
+        self.log("Starting Coder setup...")
+
         # Filter out --tui from sys.argv
         tui_args = [arg for arg in sys.argv[1:] if arg != "--tui"]
 
-        # Let main_runner parse the args from the filtered list
-        self.coder = await asyncio.to_thread(main_runner, tui_args, return_coder=True)
-        self.post_message(self.CoderReady())
+        try:
+            # Let main_runner parse the args from the filtered list
+            self.coder = await asyncio.to_thread(main_runner, tui_args, return_coder=True)
+            self.log("Coder setup finished.")
+            self.post_message(self.CoderReady())
+            self.log("Posted CoderReady message.")
+        except Exception as e:
+            self.log(f"Error during Coder setup: {e}")
+            # Also post to the chat log so the user can see it
+            self.post_message(self.UpdateChatLog(f"Error during Coder setup: {e}"))
 
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
         """Enable the prompt input when the coder is ready."""
+        self.log("Coder is ready.")
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.disabled = False
         prompt_input.focus()
