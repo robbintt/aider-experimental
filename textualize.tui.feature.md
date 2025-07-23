@@ -1,6 +1,17 @@
 # Aider Textual TUI Development Plan
 
-This document outlines the phased development of a new Textual-based Terminal User Interface (TUI) for Aider. The primary goal is to create a rich, interactive, and asynchronous user experience that replaces the current command-line REPL.
+## Project Context
+
+Aider is an AI-powered command-line tool that functions as a pair programmer for developers. It allows users to chat with an AI that can read, write, and edit code directly within their local git repository. The current interface is a simple command-line REPL (Read-Eval-Print Loop).
+
+This document outlines the plan to replace that REPL with a modern, rich Terminal User Interface (TUI) built using the [Textual](https://textual.textualize.io/) framework for Python. The new TUI aims to provide a more interactive, intuitive, and powerful user experience.
+
+## Key Concepts
+
+*   **Coder:** The core Aider class that manages the LLM, conversation history, file context, and application of code edits.
+*   **In-Chat Files:** The set of files the user has explicitly added to the conversation for the AI to focus on.
+*   **Repo Map:** A concise, high-level representation of the entire repository's structure, used to give the AI broader context beyond the in-chat files.
+*   **Slash Commands:** Commands in the current CLI, like `/add` or `/test`, that will be replaced by interactive UI elements (buttons, menus, command palette) in the new TUI.
 
 ## Guiding Principles
 
