@@ -41,10 +41,14 @@ class TuiApp(App):
 
     async def run_coder_setup(self) -> None:
         """Setup the Coder in the background."""
+        import sys
         from aider.main import main as main_runner
 
-        # Let main_runner parse the args from sys.argv
-        self.coder = await asyncio.to_thread(main_runner, return_coder=True)
+        # Filter out --tui from sys.argv
+        tui_args = [arg for arg in sys.argv[1:] if arg != "--tui"]
+
+        # Let main_runner parse the args from the filtered list
+        self.coder = await asyncio.to_thread(main_runner, tui_args, return_coder=True)
         self.post_message(self.CoderReady())
 
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
