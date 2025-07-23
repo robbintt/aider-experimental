@@ -127,17 +127,22 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 - [ ] **Task 1.4: Implement the Core Chat Loop**
 *   **Action:** Wire up the input box to send the user's prompt to the `Coder` worker and stream the response back to the `RichLog`.
 *   **Implementation:**
-    1.  In `TuiApp`, create an `on_input_submitted` handler.
-    2.  This handler will trigger a new background `Worker` to run the chat logic.
-    3.  The worker will call `self.coder.run_stream(prompt)`, iterate through the response chunks, and use `self.post_message(...)` to send each chunk back to the UI thread.
-    4.  Implement a message handler in `TuiApp` to receive these chunks and append them to the `RichLog`.
-    5.  When the `Coder` applies an edit, get the diff from `self.coder.last_aider_commit_diff` and print it to the log.
+    1.  Define new `Message` classes for chat updates: `UpdateChatLog`, `ShowDiff`, and `ChatTaskDone`.
+    2.  Implement the `on_input_submitted` handler. It should disable and clear the `Input`, then call `self.run_worker` to execute the main chat logic in the background.
+    3.  Create an `async` worker method `run_chat_task(prompt)`. This method will call `self.run_in_thread` to execute a synchronous, blocking helper method `_blocking_chat_runner(prompt)`. This prevents the chat processing from freezing the UI.
+    4.  The `_blocking_chat_runner` will:
+        *   Iterate through `self.coder.run_stream(prompt)`.
+        *   For each chunk of the AI's response, use `self.post_message` to send an `UpdateChatLog` message.
+        *   After the stream, check `self.coder.last_aider_commit_diff` and, if a diff exists, send a `ShowDiff` message.
+        *   Finally, send a `ChatTaskDone` message.
+    5.  Implement message handlers (`on_update_chat_log`, `on_show_diff`, `on_chat_task_done`) to process the messages posted from the worker. These handlers will update the `RichLog` and re-enable the `Input` widget.
 *   **Verification:**
     *   Run `aider --tui <file_to_edit>`.
     *   Enter a prompt like "add a comment to the top of the file".
     *   The AI's response should stream into the log.
     *   A diff of the change should be displayed in the log.
     *   The file on disk should be updated.
+    *   The input box should be disabled during processing and re-enabled afterward.
 
 ---
 
