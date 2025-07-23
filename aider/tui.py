@@ -1,4 +1,5 @@
 import asyncio
+import io
 import sys
 
 from textual.app import App, ComposeResult
@@ -67,8 +68,29 @@ class TuiApp(App):
             # main_runner is a synchronous function that does all the setup.
             # We run it in a thread to avoid blocking the UI.
             # It expects a list of command-line arguments (argv).
-            self.coder = await asyncio.to_thread(main_runner, tui_args, return_coder=True)
+            #
+            # We redirect stdin and stdout to in-memory streams to prevent
+            # the Coder's setup process from interfering with the TUI's
+            # control over the terminal.
+            input_stream = io.StringIO()
+            output_stream = io.StringIO()
+
+            self.coder = await asyncio.to_thread(
+                main_runner,
+                tui_args,
+                input=input_stream,
+                output=output_stream,
+                return_coder=True,
+            )
             self.log("Coder setup finished.")
+
+            # Log any output from the setup process for debugging
+            setup_output = output_stream.getvalue()
+            if setup_output:
+                self.log("--- Coder Setup Output ---")
+                self.log(setup_output)
+                self.log("--------------------------")
+
             self.post_message(self.CoderReady())
             self.log("Posted CoderReady message.")
         except Exception as e:
