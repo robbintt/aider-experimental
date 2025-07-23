@@ -4,13 +4,12 @@ import os
 import sys
 
 from textual.app import App, ComposeResult
-from textual.command import Hit, Hits, Provider
+from textual.command import CommandPalette, Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
 from textual.widgets import (
     Button,
     Collapsible,
-    CommandPalette,
     DirectoryTree,
     Header,
     Footer,
