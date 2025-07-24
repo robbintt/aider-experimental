@@ -396,8 +396,12 @@ class TuiApp(App):
             yield Container(id="sidebar")
             with TabbedContent(id="tabs"):
                 with TabPane("Chat", id="chat-tab"):
-                    yield TextArea.code_editor(
-                        "", read_only=True, id="chat_log", theme="css"
+                    yield TextArea(
+                        "",
+                        read_only=True,
+                        id="chat_log",
+                        language="markdown",
+                        theme="css",
                     )
                     yield Input(
                         placeholder="Loading Coder...",
