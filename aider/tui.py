@@ -7,6 +7,7 @@ from textual.app import App, ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
+from textual.on import on
 from textual.widgets import (
     Button,
     Collapsible,
@@ -171,6 +172,7 @@ class TuiApp(App):
             # Also post to the chat log so the user can see it
             self.post_message(self.UpdateChatLog(f"Error during Coder setup: {e}"))
 
+    @on(CoderReady)
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
         """Enable the prompt input when the coder is ready."""
         self.log("Coder is ready.")
@@ -183,10 +185,12 @@ class TuiApp(App):
         dir_tree = DirectoryTree(self.coder.root, id="file_browser")
         sidebar.mount(dir_tree)
 
+    @on(UpdateChatLog)
     def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
         """Update the chat log with a new message."""
         self.query_one("#chat_log", RichLog).write(message.text)
 
+    @on(ShowDiff)
     def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
         """Show a diff in the chat log."""
         chat_container = self.query_one("#chat-container")
@@ -205,6 +209,7 @@ class TuiApp(App):
         container = Horizontal(collapsible, undo_button, classes="diff-container")
         chat_container.mount(container, before="#prompt_input")
 
+    @on(ChatTaskDone)
     def on_chat_task_done(self, message: "TuiApp.ChatTaskDone") -> None:
         """Re-enable the prompt input when a chat task is done."""
         prompt_input = self.query_one("#prompt_input", Input)
@@ -233,7 +238,7 @@ class TuiApp(App):
         self.run_worker(self._blocking_lint, exclusive=True)
 
     def _blocking_lint(self) -> None:
-        self.coder.commands.cmd_lint(None)
+        self.coder.commands.cmd_lint("")
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""

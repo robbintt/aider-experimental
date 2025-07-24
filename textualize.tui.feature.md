@@ -188,6 +188,11 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     3.  These commands will call the corresponding methods on the `coder.commands` object (e.g., `self.coder.commands.cmd_commit()`).
 *   **Verification:** The user can press `Ctrl+P` (or the configured key) to open the palette and execute core commands without typing them.
 
+- [x] **Task 3.1.1: Fix TUI startup**
+*   **Action:** The TUI is hanging on startup, showing a blank screen.
+*   **Implementation:** The custom message handlers (`on_coder_ready`, etc.) are not being called. Decorate them with the `@on(...)` decorator to ensure they are registered correctly.
+*   **Verification:** The TUI starts correctly, and the input prompt becomes active after the coder has loaded.
+
 - [ ] **Task 3.2: Create the Settings Tab**
 *   **Action:** Implement a `TabbedContent` widget in the main panel with two tabs: "Chat" and "Settings".
 *   **Implementation:**
