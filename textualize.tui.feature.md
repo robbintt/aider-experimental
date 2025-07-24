@@ -172,6 +172,15 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Text typed in the input box is visible.
     *   AI responses stream into the chat view correctly as a single block of text.
 
+- [ ] **Task 1.4.4: Fix `TextArea` method and input visibility**
+*   **Action:** TUI crashes with `AttributeError` on `TextArea`, and input text is still invisible.
+*   **Implementation:**
+    1.  Correct the method for appending text to the `TextArea` to `document.insert_text()`. The `insert_text` method is on the `document` attribute, not the widget itself.
+    2.  Make the CSS selector for the prompt input more specific (`Input#prompt_input`) and set a `background` color to ensure it contrasts with the text color.
+*   **Verification:**
+    *   The application no longer crashes when the AI sends a response.
+    *   Text typed in the input box is visible in both light and dark modes.
+
 ---
 
 ## Phase 2: Interactive Context and UI Fundamentals
