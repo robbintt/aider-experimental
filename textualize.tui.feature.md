@@ -163,6 +163,15 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** In `_blocking_chat_runner`, use `getattr` to safely access `last_aider_commit_diff` and `last_aider_commit_message` from the `coder` object. The call to `cmd_undo` was also corrected to be on the `coder` object.
 *   **Verification:** The TUI no longer crashes after a change is made by the AI. Diffs are correctly displayed. The "Undo" button works.
 
+- [x] **Task 1.4.3: Fix TUI display issues**
+*   **Action:** User input text is invisible, and AI responses are displayed with one character per line.
+*   **Implementation:**
+    1.  Explicitly set the text `color` for the `#prompt_input` widget in CSS to ensure visibility against any background.
+    2.  Replace the main chat `RichLog` with a `TextArea` widget. `RichLog` is line-oriented and not suitable for streaming character-by-character updates. `TextArea` supports continuous text insertion.
+*   **Verification:**
+    *   Text typed in the input box is visible.
+    *   AI responses stream into the chat view correctly as a single block of text.
+
 ---
 
 ## Phase 2: Interactive Context and UI Fundamentals
