@@ -5,6 +5,7 @@ import sys
 
 from textual import on
 from textual.app import App, ComposeResult
+from textual.reactive import reactive
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
@@ -16,6 +17,7 @@ from textual.widgets import (
     Footer,
     Input,
     RichLog,
+    Static,
     TabbedContent,
     TabPane,
     TextArea,
@@ -65,6 +67,8 @@ class TuiApp(App):
 
     COMMANDS = App.COMMANDS | {AiderCommandProvider}
 
+    status = reactive("Initializing...")
+
     CSS = """
     Screen {
         background: $surface;
@@ -99,6 +103,13 @@ class TuiApp(App):
     }
     #scrape_button {
         width: 1fr;
+    }
+    #status_bar {
+        dock: bottom;
+        height: 1;
+        background: $surface-darken-1;
+        padding: 0 1;
+        content-align: right middle;
     }
     .diff-container {
         height: auto;
@@ -144,9 +155,24 @@ class TuiApp(App):
         self.coder = None
         super().__init__()
 
+    def watch_status(self, _status: str) -> None:
+        """Called when the status reactive attribute changes."""
+        self.query_one("#status_bar", Static).update(self.get_status_text())
+
+    def get_status_text(self) -> str:
+        """Return the status bar text."""
+        if not self.coder:
+            return f"Status: {self.status}"
+
+        model = self.coder.model.name
+        branch = self.coder.repo.active_branch_name
+
+        return f"Model: {model} | Branch: {branch} | Status: {self.status}"
+
     def on_mount(self) -> None:
         """Called when app starts."""
         self.log("TUI mounted.")
+        self.query_one("#status_bar", Static).update(self.get_status_text())
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_worker(self.run_coder_setup)
 
@@ -206,6 +232,7 @@ class TuiApp(App):
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
         """Enable the prompt input when the coder is ready."""
         self.log("Coder is ready.")
+        self.status = "Ready"
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.disabled = False
         prompt_input.focus()
@@ -249,6 +276,7 @@ class TuiApp(App):
     @on(ChatTaskDone)
     def on_chat_task_done(self, message: "TuiApp.ChatTaskDone") -> None:
         """Re-enable the prompt input when a chat task is done."""
+        self.status = "Ready"
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.disabled = False
         prompt_input.focus()
@@ -263,6 +291,7 @@ class TuiApp(App):
 
     def do_commit(self) -> None:
         """Command to commit changes."""
+        self.status = "Committing..."
         self.run_worker(self._blocking_commit, exclusive=True)
 
     def _blocking_commit(self) -> None:
@@ -272,6 +301,7 @@ class TuiApp(App):
         try:
             self.coder.commands.cmd_commit("")
         finally:
+            self.status = "Ready"
             sys.stdout = original_stdout
             output = captured_output.getvalue()
             if output:
@@ -279,6 +309,7 @@ class TuiApp(App):
 
     def do_run_test(self) -> None:
         """Command to run tests."""
+        self.status = "Testing..."
         self.run_worker(self._blocking_run_test, exclusive=True)
 
     def _blocking_run_test(self) -> None:
@@ -291,6 +322,7 @@ class TuiApp(App):
             else:
                 self.post_message(self.UpdateChatLog("No test command configured."))
         finally:
+            self.status = "Ready"
             sys.stdout = original_stdout
             output = captured_output.getvalue()
             if output:
@@ -298,6 +330,7 @@ class TuiApp(App):
 
     def do_lint(self) -> None:
         """Command to run the linter."""
+        self.status = "Linting..."
         self.run_worker(self._blocking_lint, exclusive=True)
 
     def _blocking_lint(self) -> None:
@@ -307,6 +340,7 @@ class TuiApp(App):
         try:
             self.coder.commands.cmd_lint("")
         finally:
+            self.status = "Ready"
             sys.stdout = original_stdout
             output = captured_output.getvalue()
             if output:
@@ -328,6 +362,7 @@ class TuiApp(App):
 
     async def run_undo(self, container_to_remove) -> None:
         """Run the undo command."""
+        self.status = "Undoing..."
 
         def undo_wrapper():
             original_stdout = sys.stdout
@@ -343,10 +378,13 @@ class TuiApp(App):
 
         await asyncio.to_thread(undo_wrapper)
         self.post_message(self.UpdateChatLog("Undo complete."))
+        self.notify("Undo complete.")
         await container_to_remove.remove()
+        self.status = "Ready"
 
     async def run_scrape(self, url: str) -> None:
         """Run the scrape command."""
+        self.status = f"Scraping {url}..."
 
         def scrape_wrapper():
             original_stdout = sys.stdout
@@ -361,6 +399,7 @@ class TuiApp(App):
                     self.post_message(self.UpdateChatLog(output))
 
         await asyncio.to_thread(scrape_wrapper)
+        self.status = "Ready"
 
     async def on_directory_tree_file_selected(
         self, event: DirectoryTree.FileSelected
@@ -375,6 +414,8 @@ class TuiApp(App):
         prompt = event.value
         if not prompt:
             return
+
+        self.status = "Thinking..."
 
         prompt_input = self.query_one("#prompt_input", Input)
         prompt_input.clear()
@@ -424,6 +465,7 @@ class TuiApp(App):
         if not self.coder:
             return
 
+        self.status = "Updating repo map..."
         repo_map_log = self.query_one("#repo_map_log", RichLog)
         repo_map_log.clear()
         repo_map_log.write("Updating repo map...")
@@ -435,6 +477,7 @@ class TuiApp(App):
         repo_map_content = await asyncio.to_thread(get_map)
         repo_map_log.clear()
         repo_map_log.write(repo_map_content)
+        self.status = "Ready"
 
     def _blocking_handle_file_selected(self, file_path: str):
         """Helper to add/remove file from chat in a thread."""
@@ -446,8 +489,12 @@ class TuiApp(App):
             in_chat_files = self.coder.get_inchat_relative_files()
             if rel_path in in_chat_files:
                 self.coder.drop_rel_fname(rel_path)
+                self.call_from_thread(
+                    self.notify, f"Removed {os.path.basename(rel_path)} from chat."
+                )
             else:
                 self.coder.add_rel_fname(rel_path)
+                self.call_from_thread(self.notify, f"Added {os.path.basename(rel_path)} to chat.")
         finally:
             sys.stdout = original_stdout
             output = captured_output.getvalue()
@@ -456,7 +503,9 @@ class TuiApp(App):
 
     async def handle_file_selected(self, file_path: str) -> None:
         """Handle file selection in a background thread."""
+        self.status = "Updating chat context..."
         await asyncio.to_thread(self._blocking_handle_file_selected, file_path)
+        self.status = "Ready"
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -479,6 +528,7 @@ class TuiApp(App):
                     pass
                 with TabPane("Repo Map", id="repo-map-tab"):
                     yield RichLog(id="repo_map_log", wrap=True)
+        yield Static(id="status_bar")
         yield Footer()
 
 def run_tui(args):

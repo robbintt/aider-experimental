@@ -284,7 +284,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** When the button is clicked, the URL from the input is scraped in a background worker, and the content is added to the chat.
 *   **Verification:** The user can add context from a web page directly through the UI.
 
-- [ ] **Task 4.3: Add Status Bar and Notifications**
+- [x] **Task 4.3: Add Status Bar and Notifications**
 *   **Action:** Enhance the `Footer` to act as a status bar and add `Toast` notifications.
 *   **Implementation:**
     1.  Display the current model, git branch, and status (e.g., "Thinking...") in the footer.
