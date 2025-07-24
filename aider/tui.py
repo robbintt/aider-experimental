@@ -164,7 +164,7 @@ class TuiApp(App):
         if not self.coder:
             return f"Status: {self.status}"
 
-        model = self.coder.model.name
+        model = self.coder.llm.model.name
         branch = self.coder.repo.active_branch_name
 
         return f"Model: {model} | Branch: {branch} | Status: {self.status}"
