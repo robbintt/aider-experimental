@@ -4,7 +4,7 @@ import os
 import sys
 
 from textual.app import App, ComposeResult
-from textual.command import CommandPalette, Hit, Hits, Provider
+from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
 from textual.widgets import (
@@ -27,10 +27,6 @@ class TtyStringIO(io.StringIO):
 
 class AiderCommandProvider(Provider):
     """A command provider for Aider commands."""
-
-    def __init__(self, app: "TuiApp", *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.app = app
 
     async def search(self, query: str) -> Hits:
         """Search for commands."""
@@ -62,6 +58,8 @@ class AiderCommandProvider(Provider):
 
 class TuiApp(App):
     """Aider's Textual TUI."""
+
+    COMMANDS = App.COMMANDS | {AiderCommandProvider}
 
     CSS = """
     #sidebar {
@@ -121,7 +119,6 @@ class TuiApp(App):
     def __init__(self, args):
         self.args = args
         self.coder = None
-        self._command_palette = None
         super().__init__()
 
     def on_mount(self) -> None:
@@ -129,13 +126,6 @@ class TuiApp(App):
         self.log("TUI mounted.")
         # Use a worker to avoid blocking the UI during Coder setup
         self.run_worker(self.run_coder_setup)
-
-    def action_command_palette(self) -> None:
-        """Action to display the command palette."""
-        if self._command_palette is None:
-            self._command_palette = CommandPalette()
-            self._command_palette.add_provider(AiderCommandProvider(self))
-        self.push_screen(self._command_palette)
 
     async def run_coder_setup(self) -> None:
         """Setup the Coder in the background."""
