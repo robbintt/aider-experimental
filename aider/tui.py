@@ -191,7 +191,7 @@ class TuiApp(App):
     @on(UpdateChatLog)
     def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
         """Update the chat log with a new message."""
-        self.query_one("#chat_log", TextArea).document.insert_text(message.text)
+        self.query_one("#chat_log", TextArea).insert_text(message.text)
 
     @on(ShowDiff)
     def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
@@ -276,7 +276,7 @@ class TuiApp(App):
         prompt_input.disabled = True
 
         chat_log = self.query_one("#chat_log", TextArea)
-        chat_log.document.insert_text(f"> {prompt}\n\n")
+        chat_log.insert_text(f"> {prompt}\n\n")
 
         self.run_worker(self.run_chat_task(prompt))
 
