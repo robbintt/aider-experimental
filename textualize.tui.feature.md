@@ -209,9 +209,9 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** Remove the `language="markdown"` argument from the `TextArea` widget used for the chat log. This prevents the crash by allowing the widget to default to plain text rendering, which doesn't require a special grammar.
 *   **Verification:** The TUI starts successfully without crashing.
 
-- [ ] **Task 1.4.9: Fix invisible input text by debugging render cycle**
-*   **Action:** Text typed into the `Input` widget is not echoed to the screen, though it is registered by the application. This points to an issue in the widget's render lifecycle.
-*   **Implementation:** The current approach of fixing styling has failed. The next step is to investigate how `Key` events are processed and how they trigger widget refreshes. A potential issue is that `sys.stdout` redirection, used to capture `coder` output, might be interfering with Textual's rendering process. The fix will likely involve changing how we capture output to be more compatible with Textual's rendering loop.
+- [x] **Task 1.4.9: Fix invisible input text by protecting `sys.stdout`**
+*   **Action:** Text typed into the `Input` widget is not echoed to the screen. This is likely caused by the `coder` setup process permanently redirecting `sys.stdout`.
+*   **Implementation:** In `run_coder_setup`, wrap the call to `main_runner` in a `try...finally` block to ensure that `sys.stdout` and `sys.stdin` are always restored after the `coder` is initialized. This guarantees that Textual's renderer can always write to the correct output stream.
 *   **Verification:** Text typed into the input field is visible as it is typed.
 
 ---

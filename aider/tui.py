@@ -153,6 +153,8 @@ class TuiApp(App):
         tui_args = [arg for arg in sys.argv[1:] if arg != "--tui"]
         tui_args.append("--no-fancy-input")
 
+        original_stdout = sys.stdout
+        original_stdin = sys.stdin
         try:
             # main_runner is a synchronous function that does all the setup.
             # We run it in a thread to avoid blocking the UI.
@@ -163,6 +165,9 @@ class TuiApp(App):
             # control over the terminal.
             input_stream = TtyStringIO()
             output_stream = TtyStringIO()
+
+            sys.stdout = output_stream
+            sys.stdin = input_stream
 
             self.coder = await asyncio.to_thread(
                 main_runner,
@@ -186,6 +191,9 @@ class TuiApp(App):
             self.log(f"Error during Coder setup: {e}")
             # Also post to the chat log so the user can see it
             self.post_message(self.UpdateChatLog(f"Error during Coder setup: {e}"))
+        finally:
+            sys.stdout = original_stdout
+            sys.stdin = original_stdin
 
     @on(CoderReady)
     def on_coder_ready(self, message: "TuiApp.CoderReady") -> None:
