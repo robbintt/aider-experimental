@@ -400,7 +400,6 @@ class TuiApp(App):
                         "",
                         read_only=True,
                         id="chat_log",
-                        language="markdown",
                         theme="css",
                     )
                     yield Input(

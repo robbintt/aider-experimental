@@ -199,10 +199,15 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     2.  Re-applied explicit `background` and `color` styles to the `Input` widget using these theme variables to guarantee contrast.
 *   **Verification:** Text typed into the input field is now visible.
 
-- [ ] **Task 1.4.7: Fix invisible input text by isolating widget composition**
+- [x] **Task 1.4.7: Fix invisible input text by isolating widget composition**
 *   **Action:** The text echoing in the `Input` widget is not working. This may be an unforeseen interaction with the `TextArea.code_editor` widget.
 *   **Implementation:** Replace the `TextArea.code_editor()` convenience method with a standard `TextArea()` widget, manually configured for the chat log. This eliminates a potential source of complex, conflicting styles that may be interfering with the `Input` widget's rendering.
 *   **Verification:** Text typed into the input field is now visible as it is typed.
+
+- [ ] **Task 1.4.8: Fix `LanguageDoesNotExist` crash on startup**
+*   **Action:** The TUI crashes on startup because the `tree-sitter` grammar for `markdown` is not installed.
+*   **Implementation:** Remove the `language="markdown"` argument from the `TextArea` widget used for the chat log. This prevents the crash by allowing the widget to default to plain text rendering, which doesn't require a special grammar.
+*   **Verification:** The TUI starts successfully without crashing.
 
 ---
 
