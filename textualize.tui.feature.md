@@ -279,7 +279,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** When this tab is selected, it should call `self.coder.get_repo_map()` and display the result in a `RichLog` or `Markdown` widget.
 *   **Verification:** The user can easily view the repository map from within the TUI.
 
-- [ ] **Task 4.2: Implement Web Scraper UI**
+- [x] **Task 4.2: Implement Web Scraper UI**
 *   **Action:** Add an `Input` and `Button` to the sidebar for scraping web content.
 *   **Implementation:** When the button is clicked, the URL from the input is scraped in a background worker, and the content is added to the chat.
 *   **Verification:** The user can add context from a web page directly through the UI.

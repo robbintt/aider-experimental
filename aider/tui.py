@@ -93,6 +93,13 @@ class TuiApp(App):
     Input#prompt_input:focus {
         border: round cornflowerblue;
     }
+    #url_input {
+        width: 1fr;
+        margin: 1 0;
+    }
+    Button[name="scrape"] {
+        width: 1fr;
+    }
     .diff-container {
         height: auto;
     }
@@ -208,6 +215,11 @@ class TuiApp(App):
         dir_tree = DirectoryTree(self.coder.root, id="file_browser")
         sidebar.mount(dir_tree)
 
+        url_input = Input(placeholder="URL to scrape", id="url_input")
+        scrape_button = Button("Scrape", name="scrape")
+        sidebar.mount(url_input)
+        sidebar.mount(scrape_button)
+
     @on(UpdateChatLog)
     def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
         """Update the chat log with a new message."""
@@ -307,6 +319,12 @@ class TuiApp(App):
             container = event.button.parent
             event.button.disabled = True
             self.run_worker(self.run_undo(container), exclusive=False)
+        elif event.button.name == "scrape":
+            url_input = self.query_one("#url_input", Input)
+            url = url_input.value
+            if url:
+                url_input.clear()
+                self.run_worker(self.run_scrape(url), exclusive=True)
 
     async def run_undo(self, container_to_remove) -> None:
         """Run the undo command."""
@@ -326,6 +344,23 @@ class TuiApp(App):
         await asyncio.to_thread(undo_wrapper)
         self.post_message(self.UpdateChatLog("Undo complete."))
         await container_to_remove.remove()
+
+    async def run_scrape(self, url: str) -> None:
+        """Run the scrape command."""
+
+        def scrape_wrapper():
+            original_stdout = sys.stdout
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                self.coder.commands.cmd_web(url)
+            finally:
+                sys.stdout = original_stdout
+                output = captured_output.getvalue()
+                if output:
+                    self.post_message(self.UpdateChatLog(output))
+
+        await asyncio.to_thread(scrape_wrapper)
 
     async def on_directory_tree_file_selected(
         self, event: DirectoryTree.FileSelected
