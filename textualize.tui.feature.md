@@ -274,7 +274,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 
 **Goal:** Refine the user experience and add high-value features not present in the original CLI.
 
-- [ ] **Task 4.1: Add a Repo Map Tab**
+- [x] **Task 4.1: Add a Repo Map Tab**
 *   **Action:** Add a third tab to the main panel for the "Repo Map".
 *   **Implementation:** When this tab is selected, it should call `self.coder.get_repo_map()` and display the result in a `RichLog` or `Markdown` widget.
 *   **Verification:** The user can easily view the repository map from within the TUI.

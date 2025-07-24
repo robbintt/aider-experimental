@@ -241,6 +241,14 @@ class TuiApp(App):
         prompt_input.disabled = False
         prompt_input.focus()
 
+    @on(TabbedContent.TabActivated)
+    def on_tabbed_content_tab_activated(
+        self, event: TabbedContent.TabActivated
+    ) -> None:
+        """Handle tab activation."""
+        if str(event.pane.id) == "repo-map-tab":
+            self.run_worker(self.update_repo_map, exclusive=False)
+
     def do_commit(self) -> None:
         """Command to commit changes."""
         self.run_worker(self._blocking_commit, exclusive=True)
@@ -376,6 +384,23 @@ class TuiApp(App):
         """Run a chat task in a background thread."""
         await asyncio.to_thread(self._blocking_chat_runner, prompt)
 
+    async def update_repo_map(self) -> None:
+        """Update the repo map."""
+        if not self.coder:
+            return
+
+        repo_map_log = self.query_one("#repo_map_log", RichLog)
+        repo_map_log.clear()
+        repo_map_log.write("Updating repo map...")
+
+        def get_map():
+            # This is a blocking call, so it's good it is in a thread
+            return self.coder.get_repo_map()
+
+        repo_map_content = await asyncio.to_thread(get_map)
+        repo_map_log.clear()
+        repo_map_log.write(repo_map_content)
+
     def _blocking_handle_file_selected(self, file_path: str):
         """Helper to add/remove file from chat in a thread."""
         original_stdout = sys.stdout
@@ -417,6 +442,8 @@ class TuiApp(App):
                     )
                 with TabPane("Settings", id="settings-tab"):
                     pass
+                with TabPane("Repo Map", id="repo-map-tab"):
+                    yield RichLog(id="repo_map_log", wrap=True)
         yield Footer()
 
 def run_tui(args):
