@@ -245,7 +245,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** The custom message handlers (`on_coder_ready`, etc.) are not being called. Decorate them with the `@on(...)` decorator to ensure they are registered correctly.
 *   **Verification:** The TUI starts correctly, and the input prompt becomes active after the coder has loaded.
 
-- [ ] **Task 3.2: Create the Settings Tab**
+- [x] **Task 3.2: Create the Settings Tab**
 *   **Action:** Implement a `TabbedContent` widget in the main panel with two tabs: "Chat" and "Settings".
 *   **Implementation:**
     1.  Move the existing chat UI into the "Chat" tab.

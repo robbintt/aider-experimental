@@ -16,6 +16,8 @@ from textual.widgets import (
     Footer,
     Input,
     RichLog,
+    TabbedContent,
+    TabPane,
     TextArea,
 )
 
@@ -72,8 +74,10 @@ class TuiApp(App):
         width: 40;
         overflow: auto;
     }
-    #chat-container {
+    #tabs {
         width: 1fr;
+    }
+    #chat-tab {
         overflow: auto;
     }
     #chat_log {
@@ -206,7 +210,7 @@ class TuiApp(App):
     @on(ShowDiff)
     def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
         """Show a diff in the chat log."""
-        chat_container = self.query_one("#chat-container")
+        chat_tab = self.query_one("#chat-tab")
 
         diff_log = RichLog(wrap=True, highlight=True)
         diff_log.write(f"```diff\n{message.diff}\n```")
@@ -220,7 +224,7 @@ class TuiApp(App):
         undo_button = Button("Undo", name="undo")
 
         container = Horizontal(collapsible, undo_button, classes="diff-container")
-        chat_container.mount(container, before="#prompt_input")
+        chat_tab.mount(container, before="#prompt_input")
 
     @on(ChatTaskDone)
     def on_chat_task_done(self, message: "TuiApp.ChatTaskDone") -> None:
@@ -390,15 +394,18 @@ class TuiApp(App):
         yield Header()
         with Horizontal():
             yield Container(id="sidebar")
-            with Container(id="chat-container"):
-                yield TextArea.code_editor(
-                    "", read_only=True, id="chat_log", theme="css"
-                )
-                yield Input(
-                    placeholder="Loading Coder...",
-                    id="prompt_input",
-                    disabled=True,
-                )
+            with TabbedContent(id="tabs"):
+                with TabPane("Chat", id="chat-tab"):
+                    yield TextArea.code_editor(
+                        "", read_only=True, id="chat_log", theme="css"
+                    )
+                    yield Input(
+                        placeholder="Loading Coder...",
+                        id="prompt_input",
+                        disabled=True,
+                    )
+                with TabPane("Settings", id="settings-tab"):
+                    pass
         yield Footer()
 
 def run_tui(args):
