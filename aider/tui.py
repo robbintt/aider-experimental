@@ -3,11 +3,11 @@ import io
 import os
 import sys
 
+from textual import on
 from textual.app import App, ComposeResult
 from textual.command import Hit, Hits, Provider
 from textual.containers import Container, Horizontal
 from textual.message import Message
-from textual.on import on
 from textual.widgets import (
     Button,
     Collapsible,
