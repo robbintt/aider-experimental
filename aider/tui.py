@@ -165,7 +165,7 @@ class TuiApp(App):
             return f"Status: {self.status}"
 
         model = self.args.model
-        branch = self.coder.repo.active_branch_name
+        branch = self.coder.repo.repo.active_branch.name
 
         return f"Model: {model} | Branch: {branch} | Status: {self.status}"
 
