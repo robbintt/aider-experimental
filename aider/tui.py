@@ -97,7 +97,7 @@ class TuiApp(App):
         width: 1fr;
         margin: 1 0;
     }
-    Button[name="scrape"] {
+    #scrape_button {
         width: 1fr;
     }
     .diff-container {
@@ -216,7 +216,7 @@ class TuiApp(App):
         sidebar.mount(dir_tree)
 
         url_input = Input(placeholder="URL to scrape", id="url_input")
-        scrape_button = Button("Scrape", name="scrape")
+        scrape_button = Button("Scrape", name="scrape", id="scrape_button")
         sidebar.mount(url_input)
         sidebar.mount(scrape_button)
 
