@@ -181,6 +181,17 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   The application no longer crashes when the AI sends a response.
     *   Text typed in the input box is visible in both light and dark modes.
 
+- [ ] **Task 1.4.5: Fix `TextArea` method, input visibility, and command feedback**
+*   **Action:** TUI crashes on text insertion, input text is invisible, and commands run from the UI provide no feedback.
+*   **Implementation:**
+    1.  Fixed the method for appending text to the `TextArea` to use the correct `insert()` method name and move the cursor to the end of the document first.
+    2.  Updated the CSS for the `Input` widget to use hardcoded colors and a border to ensure it's visible.
+    3.  Wrapped all blocking calls to `coder.commands` with `sys.stdout` redirection to capture and display their output in the chat log, providing consistent feedback for all UI actions.
+*   **Verification:**
+    *   The application no longer crashes when updating the chat log.
+    *   Text typed in the input box is now clearly visible.
+    *   Clicking files in the file browser and using commands from the palette now show output in the chat log.
+
 ---
 
 ## Phase 2: Interactive Context and UI Fundamentals

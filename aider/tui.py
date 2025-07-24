@@ -78,8 +78,9 @@ class TuiApp(App):
     Input#prompt_input {
         dock: bottom;
         height: 1;
-        color: $text;
-        background: $surface;
+        color: white;
+        background: black;
+        border: round red;
     }
     .diff-container {
         height: auto;
@@ -191,7 +192,9 @@ class TuiApp(App):
     @on(UpdateChatLog)
     def on_update_chat_log(self, message: "TuiApp.UpdateChatLog") -> None:
         """Update the chat log with a new message."""
-        self.query_one("#chat_log", TextArea).insert_text(message.text)
+        chat_log = self.query_one("#chat_log", TextArea)
+        chat_log.move_cursor(chat_log.document.end)
+        chat_log.insert(message.text)
 
     @on(ShowDiff)
     def on_show_diff(self, message: "TuiApp.ShowDiff") -> None:
@@ -224,24 +227,51 @@ class TuiApp(App):
         self.run_worker(self._blocking_commit, exclusive=True)
 
     def _blocking_commit(self) -> None:
-        self.coder.commands.cmd_commit("")
+        original_stdout = sys.stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            self.coder.commands.cmd_commit("")
+        finally:
+            sys.stdout = original_stdout
+            output = captured_output.getvalue()
+            if output:
+                self.post_message(self.UpdateChatLog(output))
 
     def do_run_test(self) -> None:
         """Command to run tests."""
         self.run_worker(self._blocking_run_test, exclusive=True)
 
     def _blocking_run_test(self) -> None:
-        if self.coder.test_cmd:
-            self.coder.commands.cmd_test(self.coder.test_cmd)
-        else:
-            self.post_message(self.UpdateChatLog("No test command configured."))
+        original_stdout = sys.stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            if self.coder.test_cmd:
+                self.coder.commands.cmd_test(self.coder.test_cmd)
+            else:
+                self.post_message(self.UpdateChatLog("No test command configured."))
+        finally:
+            sys.stdout = original_stdout
+            output = captured_output.getvalue()
+            if output:
+                self.post_message(self.UpdateChatLog(output))
 
     def do_lint(self) -> None:
         """Command to run the linter."""
         self.run_worker(self._blocking_lint, exclusive=True)
 
     def _blocking_lint(self) -> None:
-        self.coder.commands.cmd_lint("")
+        original_stdout = sys.stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            self.coder.commands.cmd_lint("")
+        finally:
+            sys.stdout = original_stdout
+            output = captured_output.getvalue()
+            if output:
+                self.post_message(self.UpdateChatLog(output))
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses."""
@@ -253,7 +283,20 @@ class TuiApp(App):
 
     async def run_undo(self, container_to_remove) -> None:
         """Run the undo command."""
-        await asyncio.to_thread(self.coder.cmd_undo, "")
+
+        def undo_wrapper():
+            original_stdout = sys.stdout
+            captured_output = io.StringIO()
+            sys.stdout = captured_output
+            try:
+                self.coder.cmd_undo("")
+            finally:
+                sys.stdout = original_stdout
+                output = captured_output.getvalue()
+                if output:
+                    self.post_message(self.UpdateChatLog(output))
+
+        await asyncio.to_thread(undo_wrapper)
         self.post_message(self.UpdateChatLog("Undo complete."))
         await container_to_remove.remove()
 
@@ -276,7 +319,8 @@ class TuiApp(App):
         prompt_input.disabled = True
 
         chat_log = self.query_one("#chat_log", TextArea)
-        chat_log.insert_text(f"> {prompt}\n\n")
+        chat_log.move_cursor(chat_log.document.end)
+        chat_log.insert(f"> {prompt}\n\n")
 
         self.run_worker(self.run_chat_task(prompt))
 
@@ -315,15 +359,21 @@ class TuiApp(App):
 
     def _blocking_handle_file_selected(self, file_path: str):
         """Helper to add/remove file from chat in a thread."""
-        rel_path = os.path.relpath(file_path, self.coder.root)
-
-        in_chat_files = self.coder.get_inchat_relative_files()
-        if rel_path in in_chat_files:
-            self.coder.drop_rel_fname(rel_path)
-            self.post_message(self.UpdateChatLog(f"Removed {rel_path} from the chat."))
-        else:
-            self.coder.add_rel_fname(rel_path)
-            self.post_message(self.UpdateChatLog(f"Added {rel_path} from the chat."))
+        original_stdout = sys.stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            rel_path = os.path.relpath(file_path, self.coder.root)
+            in_chat_files = self.coder.get_inchat_relative_files()
+            if rel_path in in_chat_files:
+                self.coder.drop_rel_fname(rel_path)
+            else:
+                self.coder.add_rel_fname(rel_path)
+        finally:
+            sys.stdout = original_stdout
+            output = captured_output.getvalue()
+            if output:
+                self.post_message(self.UpdateChatLog(output))
 
     async def handle_file_selected(self, file_path: str) -> None:
         """Handle file selection in a background thread."""
