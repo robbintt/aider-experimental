@@ -147,6 +147,17 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   The input box should be disabled during processing and re-enabled afterward.
     *   Alternatively, run `aider --tui <path_to_a_file>` and verify that making an edit works as described above.
 
+- [x] **Task 1.4.1: Fix Chat Interaction and Feedback**
+*   **Action:** User is unable to see typed text in the input box, and slash commands provide no feedback. The input becomes unresponsive after the first command.
+*   **Implementation:**
+    1.  In `_blocking_chat_runner`, redirect `sys.stdout` to an in-memory `io.StringIO()` buffer for the duration of the `coder` call. This captures all output from the `coder`'s `io` methods, which would otherwise corrupt the Textual display.
+    2.  After the `coder` call completes, post the captured output to the chat log.
+    3.  Wrap the chat logic in a `try...finally` block to ensure `sys.stdout` is always restored and the `ChatTaskDone` message is always posted, which prevents the UI from becoming unresponsive.
+*   **Verification:**
+    *   Text typed in the input box is now visible.
+    *   Executing a slash command like `/add <file>` displays a confirmation message in the chat log.
+    *   The input box remains active and usable after each command.
+
 ---
 
 ## Phase 2: Interactive Context and UI Fundamentals

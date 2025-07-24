@@ -279,18 +279,30 @@ class TuiApp(App):
 
     def _blocking_chat_runner(self, prompt: str) -> None:
         """The synchronous, blocking method that runs the chat."""
-        for chunk in self.coder.run_stream(prompt):
-            self.post_message(self.UpdateChatLog(chunk))
+        # Redirect stdout to capture output from the Coder
+        original_stdout = sys.stdout
+        captured_output = io.StringIO()
+        sys.stdout = captured_output
+        try:
+            for chunk in self.coder.run_stream(prompt):
+                self.post_message(self.UpdateChatLog(chunk))
 
-        if self.coder.last_aider_commit_diff:
-            self.post_message(
-                self.ShowDiff(
-                    self.coder.last_aider_commit_diff,
-                    self.coder.last_aider_commit_message,
+            # Capture and display any output that was sent to stdout
+            output = captured_output.getvalue()
+            if output:
+                self.post_message(self.UpdateChatLog(output))
+
+            if self.coder.last_aider_commit_diff:
+                self.post_message(
+                    self.ShowDiff(
+                        self.coder.last_aider_commit_diff,
+                        self.coder.last_aider_commit_message,
+                    )
                 )
-            )
-
-        self.post_message(self.ChatTaskDone())
+        finally:
+            # Restore stdout and signal that the task is done
+            sys.stdout = original_stdout
+            self.post_message(self.ChatTaskDone())
 
     async def run_chat_task(self, prompt: str) -> None:
         """Run a chat task in a background thread."""
