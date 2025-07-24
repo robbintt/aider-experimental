@@ -64,6 +64,10 @@ class TuiApp(App):
     COMMANDS = App.COMMANDS | {AiderCommandProvider}
 
     CSS = """
+    Screen {
+        background: $surface;
+        color: $text;
+    }
     #sidebar {
         width: 40;
         overflow: auto;
@@ -78,6 +82,8 @@ class TuiApp(App):
     Input#prompt_input {
         dock: bottom;
         height: 1;
+        background: $surface;
+        color: $text;
     }
 
     Input#prompt_input:focus {

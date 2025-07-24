@@ -192,12 +192,12 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Text typed in the input box is now clearly visible.
     *   Clicking files in the file browser and using commands from the palette now show output in the chat log.
 
-- [ ] **Task 1.4.6: Fix invisible input text by correcting theme conflict**
+- [x] **Task 1.4.6: Fix invisible input text by correcting theme conflict**
 *   **Action:** Text typed into the `Input` widget is invisible.
 *   **Implementation:**
-    1.  The `TextArea.code_editor` was defaulting to the `monokai` theme, which interfered with the app's overall theme, causing the `Input`'s text color to mismatch its background. Changed the `TextArea` to use the `css` theme, so it inherits from the application's stylesheet.
-    2.  Simplified the CSS for the `Input` widget to rely on default theme inheritance, removing explicit `color` and `background` properties.
-*   **Verification:** Text typed into the input field is now visible in both light and dark modes.
+    1.  Added a `Screen` style rule to the main CSS to establish a solid base `background` and `color` for the entire application, ensuring that theme variables (`$surface`, `$text`) are reliable.
+    2.  Re-applied explicit `background` and `color` styles to the `Input` widget using these theme variables to guarantee contrast.
+*   **Verification:** Text typed into the input field is now visible.
 
 ---
 
@@ -285,3 +285,12 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 - [ ] **Task 5.1:** Advanced history browser for searching and reusing prompts from past sessions.
 - [ ] **Task 5.2:** In-app theme editor for full visual customization.
 - [ ] **Task 5.3:** Integration with other developer tools.
+
+---
+
+## References
+
+*   [Textual Input Widget](https://textual.textualize.io/widgets/input/)
+*   [Textual Styles Guide](https://textual.textualize.io/guide/styles/)
+*   [Textual CSS Guide](https://textual.textualize.io/guide/CSS/)
+*   [Textual Styles Reference](https://textual.textualize.io/styles/)
