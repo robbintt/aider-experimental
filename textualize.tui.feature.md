@@ -181,7 +181,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   The application no longer crashes when the AI sends a response.
     *   Text typed in the input box is visible in both light and dark modes.
 
-- [ ] **Task 1.4.5: Fix `TextArea` method, input visibility, and command feedback**
+- [x] **Task 1.4.5: Fix `TextArea` method, input visibility, and command feedback**
 *   **Action:** TUI crashes on text insertion, input text is invisible, and commands run from the UI provide no feedback.
 *   **Implementation:**
     1.  Fixed the method for appending text to the `TextArea` to use the correct `insert()` method name and move the cursor to the end of the document first.
@@ -191,6 +191,13 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   The application no longer crashes when updating the chat log.
     *   Text typed in the input box is now clearly visible.
     *   Clicking files in the file browser and using commands from the palette now show output in the chat log.
+
+- [ ] **Task 1.4.6: Fix invisible input text by correcting theme conflict**
+*   **Action:** Text typed into the `Input` widget is invisible.
+*   **Implementation:**
+    1.  The `TextArea.code_editor` was defaulting to the `monokai` theme, which interfered with the app's overall theme, causing the `Input`'s text color to mismatch its background. Changed the `TextArea` to use the `css` theme, so it inherits from the application's stylesheet.
+    2.  Simplified the CSS for the `Input` widget to rely on default theme inheritance, removing explicit `color` and `background` properties.
+*   **Verification:** Text typed into the input field is now visible in both light and dark modes.
 
 ---
 

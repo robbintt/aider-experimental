@@ -78,8 +78,6 @@ class TuiApp(App):
     Input#prompt_input {
         dock: bottom;
         height: 1;
-        color: $text;
-        background: $surface;
     }
 
     Input#prompt_input:focus {
@@ -387,7 +385,9 @@ class TuiApp(App):
         with Horizontal():
             yield Container(id="sidebar")
             with Container(id="chat-container"):
-                yield TextArea.code_editor("", read_only=True, id="chat_log")
+                yield TextArea.code_editor(
+                    "", read_only=True, id="chat_log", theme="css"
+                )
                 yield Input(
                     placeholder="Loading Coder...",
                     id="prompt_input",
