@@ -204,10 +204,15 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Implementation:** Replace the `TextArea.code_editor()` convenience method with a standard `TextArea()` widget, manually configured for the chat log. This eliminates a potential source of complex, conflicting styles that may be interfering with the `Input` widget's rendering.
 *   **Verification:** Text typed into the input field is now visible as it is typed.
 
-- [ ] **Task 1.4.8: Fix `LanguageDoesNotExist` crash on startup**
+- [x] **Task 1.4.8: Fix `LanguageDoesNotExist` crash on startup**
 *   **Action:** The TUI crashes on startup because the `tree-sitter` grammar for `markdown` is not installed.
 *   **Implementation:** Remove the `language="markdown"` argument from the `TextArea` widget used for the chat log. This prevents the crash by allowing the widget to default to plain text rendering, which doesn't require a special grammar.
 *   **Verification:** The TUI starts successfully without crashing.
+
+- [ ] **Task 1.4.9: Fix invisible input text by debugging render cycle**
+*   **Action:** Text typed into the `Input` widget is not echoed to the screen, though it is registered by the application. This points to an issue in the widget's render lifecycle.
+*   **Implementation:** The current approach of fixing styling has failed. The next step is to investigate how `Key` events are processed and how they trigger widget refreshes. A potential issue is that `sys.stdout` redirection, used to capture `coder` output, might be interfering with Textual's rendering process. The fix will likely involve changing how we capture output to be more compatible with Textual's rendering loop.
+*   **Verification:** Text typed into the input field is visible as it is typed.
 
 ---
 
