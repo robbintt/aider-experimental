@@ -185,7 +185,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Action:** TUI crashes on text insertion, input text is invisible, and commands run from the UI provide no feedback.
 *   **Implementation:**
     1.  Fixed the method for appending text to the `TextArea` to use the correct `insert()` method name and move the cursor to the end of the document first.
-    2.  Updated the CSS for the `Input` widget to use hardcoded colors and a border to ensure it's visible.
+    2.  Updated the CSS for the `Input` widget to use Textual's theme variables (`$text`, `$surface`) which adapt to light/dark mode. Replaced the debug border with a standard `:focus` border.
     3.  Wrapped all blocking calls to `coder.commands` with `sys.stdout` redirection to capture and display their output in the chat log, providing consistent feedback for all UI actions.
 *   **Verification:**
     *   The application no longer crashes when updating the chat log.

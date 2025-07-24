@@ -78,9 +78,12 @@ class TuiApp(App):
     Input#prompt_input {
         dock: bottom;
         height: 1;
-        color: white;
-        background: black;
-        border: round red;
+        color: $text;
+        background: $surface;
+    }
+
+    Input#prompt_input:focus {
+        border: round cornflowerblue;
     }
     .diff-container {
         height: auto;
