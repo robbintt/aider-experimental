@@ -134,7 +134,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     4.  The `_blocking_chat_runner` will:
         *   Iterate through `self.coder.run_stream(prompt)`.
         *   For each chunk of the AI's response, use `self.post_message` to send an `UpdateChatLog` message.
-        *   After the stream, check `self.coder.last_aider_commit_diff` and, if a diff exists, send a `ShowDiff` message.
+        *   After the stream, check `self.coder.commands.last_aider_commit_diff` and, if a diff exists, send a `ShowDiff` message.
         *   Finally, send a `ChatTaskDone` message.
     5.  Implement message handlers (`on_update_chat_log`, `on_show_diff`, `on_chat_task_done`) to process the messages posted from the worker. These handlers will update the `RichLog` and re-enable the `Input` widget.
 *   **Verification:**
@@ -157,6 +157,11 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
     *   Text typed in the input box is now visible.
     *   Executing a slash command like `/add <file>` displays a confirmation message in the chat log.
     *   The input box remains active and usable after each command.
+
+- [x] **Task 1.4.2: Fix AttributeError for diff attributes**
+*   **Action:** The TUI crashes with an `AttributeError` because `last_aider_commit_diff` is accessed on the `coder` object instead of `coder.commands`. The `Undo` button is also broken for the same reason.
+*   **Implementation:** Change `self.coder.last_aider_commit_diff` to `self.coder.commands.last_aider_commit_diff` in `_blocking_chat_runner`. Similarly, fix the call to `cmd_undo` to be on `coder.commands`.
+*   **Verification:** The TUI no longer crashes after a change is made by the AI. Diffs are correctly displayed. The "Undo" button works.
 
 ---
 
@@ -182,7 +187,7 @@ This document outlines the plan to replace that REPL with a modern, rich Termina
 *   **Action:** Enhance the chat log to be cleaner and more informative.
 *   **Implementation:**
     1.  When a diff is generated, display it inside a `Collapsible` widget. The title of the collapsible should be the commit message.
-    2.  Add a simple "Undo" `Button` next to the `Collapsible` diff summary. When clicked, it should execute `self.coder.cmd_undo()`.
+    2.  Add a simple "Undo" `Button` next to the `Collapsible` diff summary. When clicked, it should execute `self.coder.commands.cmd_undo()`.
 *   **Verification:** Diffs are now hidden by default, making the chat log easier to read. The user can undo the last change with a single click.
 
 ---

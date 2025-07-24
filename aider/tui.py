@@ -250,7 +250,7 @@ class TuiApp(App):
 
     async def run_undo(self, container_to_remove) -> None:
         """Run the undo command."""
-        await asyncio.to_thread(self.coder.cmd_undo)
+        await asyncio.to_thread(self.coder.commands.cmd_undo, "")
         self.post_message(self.UpdateChatLog("Undo complete."))
         await container_to_remove.remove()
 
@@ -292,11 +292,11 @@ class TuiApp(App):
             if output:
                 self.post_message(self.UpdateChatLog(output))
 
-            if self.coder.last_aider_commit_diff:
+            if self.coder.commands.last_aider_commit_diff:
                 self.post_message(
                     self.ShowDiff(
-                        self.coder.last_aider_commit_diff,
-                        self.coder.last_aider_commit_message,
+                        self.coder.commands.last_aider_commit_diff,
+                        self.coder.commands.last_aider_commit_message,
                     )
                 )
         finally:
