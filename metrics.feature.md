@@ -2,11 +2,11 @@
 
 This document outlines the steps to add Prometheus metrics to the `aider` application. Each step is designed to be a buildable and completable unit of work.
 
-- [ ] **1. Add `prometheus-client` as an optional dependency:**
+- [x] **1. Add `prometheus-client` as an optional dependency:**
     - Add `prometheus-client` to `requirements/requirements.in`.
     - In `pyproject.toml`, define a new optional dependency group named `metrics` that includes `prometheus-client`.
 
-- [ ] **2. Create the core metrics module:**
+- [x] **2. Create the core metrics module:**
     - Create a new file named `aider/metrics.py`.
     - In this file, define the following Prometheus metrics, guarded by a `try...except ImportError` block for `prometheus-client`:
         - A `Counter` for total LLM requests, with labels for `model` and `status` (success/failure).
