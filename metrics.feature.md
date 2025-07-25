@@ -18,11 +18,14 @@ This document outlines the steps to add Prometheus metrics to the `aider` applic
         - The `failure_callback` will receive the `exception` to log failed requests.
     - All code in this file should be structured to ensure `aider` can run without `prometheus-client` installed if the metrics feature is not used.
 
-- [x] **3. Register the metrics callbacks with `litellm`:**
-    - In `aider/llm.py`, modify the `_load_litellm` method to register the success and failure callbacks from `aider/metrics.py`.
+- [ ] **3. Register the metrics callbacks with `litellm`:**
+    - In `aider/llm.py`, modify the `_load_litellm` method to register the success and failure callbacks from `aider/metrics.py` only if metrics are enabled.
+    - This will be controlled by a new `enable_metrics` method on the `LazyLiteLLM` class that is called from `aider/main.py` when the `--metrics-enabled` flag is present.
     - The registration should be wrapped in a `try...except` block to gracefully handle cases where the `prometheus-client` library is not installed.
 
-- [x] **4. Expose the metrics via command-line arguments:**
+- [ ] **4. Expose the metrics via command-line arguments:**
+    - In `aider/main.py`, add a new boolean command-line argument `--metrics-enabled` which defaults to `False`.
     - In `aider/main.py`, add new command-line arguments `--metrics-port` to specify the port and `--metrics-host` to specify the host for the metrics server (defaulting to `localhost`). These will be configurable in `.aider.conf.yml`.
-    - In the `main` function, check if the `--metrics-port` argument is provided. If it is, start the Prometheus HTTP server in a background thread using the provided host and port.
+    - In the `main` function, check if both `--metrics-enabled` is `True` and the `--metrics-port` argument is provided. If so, start the Prometheus HTTP server in a background thread using the provided host and port.
+    - If `--metrics-enabled` is true but no port is provided, issue a warning.
     - Ensure this functionality is also wrapped in a `try...except ImportError` block and informs the user if the feature is used without the necessary dependency installed.

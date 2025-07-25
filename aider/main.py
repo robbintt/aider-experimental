@@ -450,6 +450,12 @@ def sanity_check_repo(repo, io):
 
 def add_metrics_args(parser):
     parser.add_argument(
+        "--metrics-enabled",
+        action="store_true",
+        help="Enable Prometheus metrics.",
+        default=False,
+    )
+    parser.add_argument(
         "--metrics-port",
         type=int,
         metavar="METRICS_PORT",
@@ -521,6 +527,9 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
 
     # Parse again to include any arguments that might have been defined in .env
     args = parser.parse_args(argv)
+
+    if args.metrics_enabled:
+        litellm.enable_metrics()
 
     if args.shell_completions:
         # Ensure parser.prog is set for shtab, though it should be by default
@@ -605,7 +614,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         io = get_io(False)
         io.tool_warning("Terminal does not support pretty output (UnicodeDecodeError)")
 
-    if args.metrics_port:
+    if args.metrics_enabled and args.metrics_port:
         try:
             from prometheus_client import start_http_server
             import aider.metrics
@@ -622,6 +631,8 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
         except ImportError:
             io.tool_warning("`prometheus-client` is not installed, metrics are disabled.")
             io.tool_warning("To enable metrics, run `pip install 'aider-chat[metrics]'`")
+    elif args.metrics_enabled:
+        io.tool_warning("Metrics are enabled, but --metrics-port is not set. No metrics will be exported.")
 
     # Process any environment variables set via --set-env
     if args.set_env:

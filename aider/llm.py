@@ -20,12 +20,16 @@ VERBOSE = False
 
 class LazyLiteLLM:
     _lazy_module = None
+    _metrics_enabled = False
 
     def __getattr__(self, name):
         if name == "_lazy_module":
             return super()
         self._load_litellm()
         return getattr(self._lazy_module, name)
+
+    def enable_metrics(self):
+        self._metrics_enabled = True
 
     def _load_litellm(self):
         if self._lazy_module is not None:
@@ -41,13 +45,14 @@ class LazyLiteLLM:
         self._lazy_module.drop_params = True
         self._lazy_module._logging._disable_debugging()
 
-        try:
-            from aider.metrics import failure_callback, success_callback
+        if self._metrics_enabled:
+            try:
+                from aider.metrics import failure_callback, success_callback
 
-            self._lazy_module.success_callback = [success_callback]
-            self._lazy_module.failure_callback = [failure_callback]
-        except ImportError:
-            pass
+                self._lazy_module.success_callback = [success_callback]
+                self._lazy_module.failure_callback = [failure_callback]
+            except ImportError:
+                pass
 
 
 litellm = LazyLiteLLM()
