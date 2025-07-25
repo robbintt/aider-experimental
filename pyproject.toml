@@ -1,4 +1,3 @@
-
 [project]
 name = "aider-chat"
 description = "Aider is AI pair programming in your terminal"
@@ -32,6 +31,7 @@ dev = { file = "requirements/requirements-dev.txt" }
 help = { file = "requirements/requirements-help.txt" }
 browser = { file = "requirements/requirements-browser.txt" }
 playwright = { file = "requirements/requirements-playwright.txt" }
+metrics = { file = "requirements/requirements-metrics.txt" }
 
 [tool.setuptools]
 include-package-data = true

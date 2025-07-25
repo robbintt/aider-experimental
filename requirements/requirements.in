@@ -30,6 +30,7 @@ pillow
 shtab
 oslex
 google-generativeai
+prometheus-client
 
 # The proper dependency is networkx[default], but this brings
 # in matplotlib and a bunch of other deps
