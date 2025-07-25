@@ -8,8 +8,15 @@ This document outlines the steps to add Prometheus metrics to the `aider` applic
 
 - [ ] **2. Create the core metrics module:**
     - Create a new file named `aider/metrics.py`.
-    - In this file, define the Prometheus metrics (Counters and Histograms) for tracking LLM requests, token usage, and latency.
-    - Implement the `litellm` callback functions (`success_callback` and `failure_callback`) that will update these metrics. All code in this file that depends on `prometheus-client` should be guarded by a `try...except ImportError` block to ensure it remains an optional feature.
+    - In this file, define the following Prometheus metrics, guarded by a `try...except ImportError` block for `prometheus-client`:
+        - A `Counter` for total LLM requests, with labels for `model` and `status` (success/failure).
+        - A `Histogram` for LLM request duration in seconds, with a label for `model`.
+        - `Counter`s for total prompt, completion, and total tokens, each with a label for `model`.
+        - A `Counter` for the estimated cost in USD, with a label for `model`.
+    - Implement `litellm` callback functions (`success_callback` and `failure_callback`) that update these metrics.
+        - The `success_callback` will receive `kwargs` and `completion_response` from `litellm` to extract model name, token usage, cost, and latency.
+        - The `failure_callback` will receive the `exception` to log failed requests.
+    - All code in this file should be structured to ensure `aider` can run without `prometheus-client` installed if the metrics feature is not used.
 
 - [ ] **3. Register the metrics callbacks with `litellm`:**
     - In `aider/llm.py`, modify the `_load_litellm` method to register the success and failure callbacks from `aider/metrics.py`.
