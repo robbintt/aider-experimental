@@ -22,7 +22,7 @@ This document outlines the steps to add Prometheus metrics to the `aider` applic
     - In `aider/llm.py`, modify the `_load_litellm` method to register the success and failure callbacks from `aider/metrics.py`.
     - The registration should be wrapped in a `try...except` block to gracefully handle cases where the `prometheus-client` library is not installed.
 
-- [ ] **4. Expose the metrics via a command-line argument:**
-    - In `aider/main.py`, add a new command-line argument `--metrics-port` to specify the port for the metrics server.
-    - In the `main` function, check if the `--metrics-port` argument is provided. If it is, start the Prometheus HTTP server in a background thread.
+- [ ] **4. Expose the metrics via command-line arguments:**
+    - In `aider/main.py`, add new command-line arguments `--metrics-port` to specify the port and `--metrics-host` to specify the host for the metrics server (defaulting to `localhost`). These will be configurable in `.aider.conf.yml`.
+    - In the `main` function, check if the `--metrics-port` argument is provided. If it is, start the Prometheus HTTP server in a background thread using the provided host and port.
     - Ensure this functionality is also wrapped in a `try...except ImportError` block and informs the user if the feature is used without the necessary dependency installed.
