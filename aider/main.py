@@ -448,6 +448,23 @@ def sanity_check_repo(repo, io):
     return False
 
 
+def add_metrics_args(parser):
+    parser.add_argument(
+        "--metrics-port",
+        type=int,
+        metavar="METRICS_PORT",
+        help="Port for Prometheus metrics server.",
+        default=None,
+    )
+    parser.add_argument(
+        "--metrics-host",
+        type=str,
+        default="localhost",
+        metavar="METRICS_HOST",
+        help="Host for Prometheus metrics server.",
+    )
+
+
 def main(argv=None, input=None, output=None, force_git_root=None, return_coder=False):
     report_uncaught_exceptions()
 
@@ -477,6 +494,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     default_config_files = list(map(str, default_config_files))
 
     parser = get_parser(default_config_files, git_root)
+    add_metrics_args(parser)
     try:
         args, unknown = parser.parse_known_args(argv)
     except AttributeError as e:
@@ -494,6 +512,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
     default_config_files.reverse()
 
     parser = get_parser(default_config_files, git_root)
+    add_metrics_args(parser)
 
     args, unknown = parser.parse_known_args(argv)
 
@@ -585,6 +604,24 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             raise err
         io = get_io(False)
         io.tool_warning("Terminal does not support pretty output (UnicodeDecodeError)")
+
+    if args.metrics_port:
+        try:
+            from prometheus_client import start_http_server
+            import aider.metrics
+
+            if aider.metrics.prometheus_client_available:
+                start_http_server(args.metrics_port, addr=args.metrics_host)
+                io.tool_output(
+                    f"Prometheus metrics server running on http://{args.metrics_host}:{args.metrics_port}"
+                )
+            else:
+                io.tool_warning("`prometheus-client` is not installed, metrics are disabled.")
+                io.tool_warning("To enable metrics, run `pip install 'aider-chat[metrics]'`")
+
+        except ImportError:
+            io.tool_warning("`prometheus-client` is not installed, metrics are disabled.")
+            io.tool_warning("To enable metrics, run `pip install 'aider-chat[metrics]'`")
 
     # Process any environment variables set via --set-env
     if args.set_env:

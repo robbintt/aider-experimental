@@ -41,6 +41,14 @@ class LazyLiteLLM:
         self._lazy_module.drop_params = True
         self._lazy_module._logging._disable_debugging()
 
+        try:
+            from aider.metrics import failure_callback, success_callback
+
+            self._lazy_module.success_callback = [success_callback]
+            self._lazy_module.failure_callback = [failure_callback]
+        except ImportError:
+            pass
+
 
 litellm = LazyLiteLLM()
 
