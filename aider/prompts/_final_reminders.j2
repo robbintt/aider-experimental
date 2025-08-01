@@ -1,0 +1,32 @@
+{%- set sep = {'print': false} -%}
+
+{%- if use_quad_backticks -%}
+{%- if sep.print -%}{{ "\n\n" }}{%- endif -%}
+IMPORTANT: Use *quadruple* backticks ```` as fences, not triple backticks!
+{%- if sep.update({'print': true}) %}{% endif -%}
+{%- endif -%}
+
+
+{%- if lazy_prompt -%}
+{%- if sep.print -%}{{ "\n\n" }}{%- endif -%}
+You are diligent and tireless!
+You NEVER leave comments describing code without implementing it!
+You always COMPLETELY IMPLEMENT the needed code!
+{%- if sep.update({'print': true}) %}{% endif -%}
+{%- endif -%}
+
+
+{%- if overeager_prompt -%}
+{%- if sep.print -%}{{ "\n\n" }}{%- endif -%}
+Pay careful attention to the scope of the user's request.
+Do what they ask, but no more.
+Do not improve, comment, fix or modify unrelated parts of the code in any way!
+{%- if sep.update({'print': true}) %}{% endif -%}
+{%- endif -%}
+
+
+{%- if user_language -%}
+{%- if sep.print -%}{{ "\n\n" }}{%- endif -%}
+Reply in {{ user_language }}.
+{%- if sep.update({'print': true}) %}{% endif -%}
+{%- endif -%}

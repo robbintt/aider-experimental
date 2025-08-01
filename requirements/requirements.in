@@ -2,6 +2,7 @@ pydub
 configargparse
 GitPython
 jsonschema
+jinja2
 rich
 prompt_toolkit
 backoff

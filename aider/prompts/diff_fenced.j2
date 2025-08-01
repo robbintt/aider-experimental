@@ -1,0 +1,58 @@
+{%- autoescape false -%}
+## SYSTEM
+{%- include '_diff_fenced_system_prompt.j2' -%}
+{%- if system_reminder -%}
+{{- "\n" -}}{{ system_reminder|trim }}
+{%- endif -%}
+
+{%- for msg in example_messages %}
+## {{ msg.role|upper }}
+
+{{ msg.content|trim }}
+{% endfor -%}
+
+{%- for msg in done_messages %}
+## {{ msg.role|upper }}
+
+{{ msg.content|trim }}
+{% endfor -%}
+
+{%- if repo_map %}
+## USER
+
+{{ repo_map_prefix|trim }}
+{{ repo_map|trim }}
+
+## ASSISTANT
+
+Ok, I won't try and edit those files without asking first.
+{%- endif -%}
+
+{%- if read_only_files %}
+## USER
+
+{{ read_only_files_prefix|trim }}
+{{ read_only_files|trim }}
+
+## ASSISTANT
+
+Ok, I will use these files as references.
+{%- endif -%}
+
+{%- if chat_files %}
+## USER
+
+{{ chat_files_prefix|trim }}
+{{ chat_files|trim }}
+
+## ASSISTANT
+
+Ok, any changes I propose will be to those files.
+{%- endif -%}
+
+{%- for msg in cur_messages %}
+## {{ msg.role|upper }}
+
+{{ msg.content|trim }}
+{% endfor -%}
+{%- endautoescape -%}

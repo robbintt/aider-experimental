@@ -182,6 +182,11 @@ def get_parser(default_config_files, git_root):
         help="Specify what edit format the LLM should use (default depends on model)",
     )
     group.add_argument(
+        "--use-jinja2-templates",
+        action="store_true",
+        help="Use Jinja2 templates for prompt generation.",
+    )
+    group.add_argument(
         "--architect",
         action="store_const",
         dest="edit_format",

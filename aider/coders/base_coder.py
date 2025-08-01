@@ -49,6 +49,7 @@ from aider.repomap import RepoMap
 from aider.run_cmd import run_cmd
 from aider.utils import format_content, format_messages, format_tokens, is_image_file
 from aider.waiting import WaitingSpinner
+from ..render import renderer
 
 from ..dump import dump  # noqa: F401
 from .chat_chunks import ChatChunks
@@ -352,7 +353,12 @@ class Coder:
         llm_command=None,
         pkm_mode=False,
         cbt_mode=False,
+        use_jinja2_templates=False,
     ):
+        self.use_jinja2_templates = use_jinja2_templates
+        self.renderer = renderer
+        self.renderer.__init__(use_jinja2=self.use_jinja2_templates)
+
         # Fill in a dummy Analytics if needed, but it is never .enable()'d
         self.analytics = analytics if analytics is not None else Analytics()
 
@@ -872,6 +878,65 @@ class Coder:
 
         return {"role": "user", "content": image_messages}
 
+    def _build_diff_fenced_context(self):
+        # This logic replaces EditorDiffFencedPrompts's behavior of blanking out prompts.
+        is_editor_mode = self.edit_format.startswith("editor-")
+
+        user_lang = self.get_user_language()
+
+        example_messages = []
+        if not self.main_model.examples_as_sys_msg:
+            for msg in self.gpt_prompts.example_messages:
+                example_messages.append(
+                    dict(
+                        role=msg["role"],
+                        content=self.fmt_system_prompt(msg["content"]),
+                    )
+                )
+            if self.gpt_prompts.example_messages:
+                example_messages += [
+                    dict(
+                        role="user",
+                        content=(
+                            "I switched to a new code base. Please don't consider the above files"
+                            " or try to edit them any longer."
+                        ),
+                    ),
+                    dict(role="assistant", content="Ok."),
+                ]
+
+        context = {
+            "repo_map": self.get_repo_map(),
+            "read_only_files": self.get_read_only_files_content(),
+            "chat_files": self.get_files_content(),
+            "done_messages": self.done_messages,
+            "cur_messages": self.cur_messages,
+            "fence": self.fence[0],
+            "platform": self.get_platform_info(),
+            "language": user_lang or "the same language they are using",
+            "include_shell_commands": not is_editor_mode and self.suggest_shell_commands,
+            "example_messages": example_messages,
+            "repo_map_prefix": self.gpt_prompts.repo_content_prefix,
+            "read_only_files_prefix": self.gpt_prompts.read_only_files_prefix,
+            "chat_files_prefix": self.gpt_prompts.files_content_prefix,
+            "rename_with_shell": self.gpt_prompts.rename_with_shell,
+            "go_ahead_tip": self.gpt_prompts.go_ahead_tip,
+            # for _final_reminders.j2
+            "use_quad_backticks": self.fence[0] == "````",
+            "lazy_prompt": self.gpt_prompts.lazy_prompt if self.main_model.lazy else "",
+            "overeager_prompt": (
+                self.gpt_prompts.overeager_prompt if self.main_model.overeager else ""
+            ),
+            "user_language": user_lang,
+        }
+
+        if self.gpt_prompts.system_reminder:
+            context["system_reminder"] = self.fmt_system_prompt(self.gpt_prompts.system_reminder)
+        else:
+            context["system_reminder"] = None
+
+        return context
+
     def run_stream(self, user_message):
         self.io.user_input(user_message)
         self.init_before_message()
@@ -1353,6 +1418,28 @@ class Coder:
         return chunks
 
     def format_messages(self):
+        if (
+            hasattr(self, "use_jinja2_templates")
+            and self.use_jinja2_templates
+            and self.edit_format in ("diff-fenced", "editor-diff-fenced")
+        ):
+            self.choose_fence()
+            context = self._build_diff_fenced_context()
+            prompt_content = self.renderer.render("diff_fenced.j2", context)
+
+            messages = utils.split_chat_history_markdown(prompt_content)
+
+            chunks = ChatChunks()
+
+            if messages and messages[0].get("role") == "system":
+                chunks.system = [messages.pop(0)]
+
+            # The jinja template now returns a list of messages, not a single user message.
+            # We are putting them all in `done` because `all_messages()` will concatenate
+            # them all anyway, which is what the equivalence test checks.
+            chunks.done = messages
+            return chunks
+
         chunks = self.format_chat_chunks()
         if self.add_cache_headers:
             chunks.add_cache_control_headers()

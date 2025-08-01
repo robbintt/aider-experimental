@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import git
 
+from aider import render
 from aider.coders import Coder
 from aider.coders.base_coder import FinishReasonLength, UnknownEditFormat
 from aider.dump import dump  # noqa: F401
@@ -1432,6 +1433,181 @@ This command will print 'Hello, World!' to the console."""
                     # Verify that editor coder was NOT created or run
                     # (because user rejected the changes)
                     mock_editor.run.assert_not_called()
+
+    def test_coder_uses_jinja2_for_diff_fenced(self):
+        # Mock the renderer to capture its inputs
+        mock_render_method = MagicMock(return_value="PROMPT_FROM_JINJA2")
+
+        with patch.object(render.renderer, "render", mock_render_method), patch.object(
+            render.renderer, "use_jinja2", True
+        ):
+            # Setup Coder with the flag
+            coder = Coder.create(
+                self.GPT35,
+                "diff-fenced",
+                io=InputOutput(pretty=False),
+                use_jinja2_templates=True,
+            )
+            coder.cur_messages = [dict(role="user", content="test message")]
+
+            # Mock the original path to ensure it's NOT called
+            with patch.object(coder, "format_chat_chunks") as mock_format_chunks:
+                coder.format_messages()
+                mock_format_chunks.assert_not_called()
+
+            # Assert that the renderer was called correctly
+            mock_render_method.assert_called_once()
+            self.assertEqual(mock_render_method.call_args[0][0], "diff_fenced.j2")
+            # Check that shell commands are included for standard diff-fenced
+            self.assertIs(mock_render_method.call_args[0][1]["include_shell_commands"], True)
+
+    def test_coder_uses_jinja2_for_editor_diff_fenced(self):
+        # Mock the renderer
+        mock_render_method = MagicMock(return_value="PROMPT_FROM_JINJA2")
+
+        with patch.object(render.renderer, "render", mock_render_method), patch.object(
+            render.renderer, "use_jinja2", True
+        ):
+            # Setup Coder for editor mode
+            coder = Coder.create(
+                self.GPT35,
+                "editor-diff-fenced",
+                io=InputOutput(pretty=False),
+                use_jinja2_templates=True,
+            )
+            coder.cur_messages = [dict(role="user", content="test message")]
+
+            with patch.object(coder, "format_chat_chunks") as mock_format_chunks:
+                coder.format_messages()
+                mock_format_chunks.assert_not_called()
+
+            # Assert that the context correctly disables shell commands for editor mode
+            mock_render_method.assert_called_once()
+            self.assertEqual(mock_render_method.call_args[0][0], "diff_fenced.j2")
+            self.assertIs(mock_render_method.call_args[0][1]["include_shell_commands"], False)
+
+    def _serialize_messages(self, messages):
+        res = []
+        for msg in messages:
+            role = msg["role"]
+            content = msg.get("content")
+            if content:
+                res.append(f"## {role.upper()}\n{content}")
+        return "\n\n".join(res)
+
+    def _get_system_prompts(self, **kwargs):
+        from aider import utils
+
+        # Setup
+        io = InputOutput(yes=True)
+        model = Model(self.GPT35.name)
+
+        base_kwargs = dict(
+            main_model=model,
+            edit_format="diff-fenced",
+            io=io,
+            fnames=[],
+            read_only_fnames=[],
+            done_messages=[],
+            cur_messages=[],
+        )
+        base_kwargs.update(kwargs)
+
+        # Python coder
+        py_coder = Coder.create(**base_kwargs, use_jinja2_templates=False)
+        py_coder.repo_map = MagicMock()
+        if py_coder.repo_map:
+            py_coder.repo_map.get_repo_map.return_value = None
+
+        py_chunks = py_coder.format_chat_chunks()
+        py_system_message = ""
+        if py_chunks.system:
+            py_system_message = py_chunks.system[0]["content"]
+
+        # Jinja coder
+        jinja_coder = Coder.create(**base_kwargs, use_jinja2_templates=True)
+        jinja_coder.repo_map = MagicMock()
+        if jinja_coder.repo_map:
+            jinja_coder.repo_map.get_repo_map.return_value = None
+
+        jinja_chunks = jinja_coder.format_messages()
+        jinja_system_message = ""
+        if jinja_chunks.system:
+            jinja_system_message = jinja_chunks.system[0]["content"]
+        elif jinja_chunks.done and jinja_chunks.done[0].get("role") == "system":
+            jinja_system_message = jinja_chunks.done[0].get("content")
+
+        return py_system_message, jinja_system_message
+
+    def test_prompt_system_message_equivalence(self):
+        "Compare just the system message part of the prompt"
+        with GitTemporaryDirectory():
+            model = Model(self.GPT35.name)
+            model.lazy = True
+            model.overeager = True
+            py_sys, jinja_sys = self._get_system_prompts(
+                main_model=model, chat_language="English", suggest_shell_commands=True
+            )
+            self.maxDiff = None
+            self.assertEqual(py_sys.strip(), jinja_sys.strip())
+
+    def test_prompt_equivalence_jinja_vs_python(self):
+        "Compare the full prompt from Jinja vs the original Python implementation"
+        with GitTemporaryDirectory():
+            # Setup files and repo
+            repo = git.Repo.init(".")
+            Path("chat_file.txt").write_text("chat file content with ``` backticks")
+            Path("ro_file.txt").write_text("read only file content")
+            Path("repo_file.txt").write_text("some other repo file")
+            repo.git.add(".")
+            repo.git.commit("-m", "init")
+
+            # Common params
+            io = InputOutput(yes=True)
+            fnames = ["chat_file.txt"]
+            read_only_fnames = ["ro_file.txt"]
+            model = Model(self.GPT35.name)
+            model.lazy = True
+            model.overeager = True
+            repo_map_content = "repo map content"
+            done_messages = [
+                dict(role="user", content="previous user message"),
+                dict(role="assistant", content="previous assistant reply"),
+            ]
+            cur_messages = [dict(role="user", content="current user message")]
+            kwargs = dict(
+                main_model=model,
+                edit_format="diff-fenced",
+                io=io,
+                fnames=fnames,
+                read_only_fnames=read_only_fnames,
+                chat_language="English",
+                suggest_shell_commands=True,
+            )
+
+            # Create Jinja coder and get prompt
+            jinja_coder = Coder.create(**kwargs, use_jinja2_templates=True)
+            jinja_coder.repo_map.get_repo_map = MagicMock(return_value=repo_map_content)
+            jinja_coder.done_messages = done_messages
+            jinja_coder.cur_messages = cur_messages
+            jinja_messages = jinja_coder.format_messages().all_messages()
+            jinja_prompt = self._serialize_messages(jinja_messages)
+
+            # Create Python coder and get prompt
+            py_coder = Coder.create(**kwargs, use_jinja2_templates=False)
+            py_coder.repo_map.get_repo_map = MagicMock(return_value=repo_map_content)
+            py_coder.done_messages = done_messages
+            py_coder.cur_messages = cur_messages
+            py_messages = py_coder.format_messages().all_messages()
+            py_prompt = self._serialize_messages(py_messages)
+
+            # This is a weak check, but it's hard to compare the two structures directly.
+            # It mainly checks that the content pieces are present.
+            self.maxDiff = None
+            self.assertEqual(
+                " ".join(py_prompt.strip().split()),
+                " ".join(jinja_prompt.strip().split()),
+            )
 
 
 if __name__ == "__main__":

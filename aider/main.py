@@ -1026,6 +1026,7 @@ def main(argv=None, input=None, output=None, force_git_root=None, return_coder=F
             auto_accept_architect=args.auto_accept_architect,
             add_gitignore_files=args.add_gitignore_files,
             llm_command=args.llm_command,
+            use_jinja2_templates=args.use_jinja2_templates,
         )
     except UnknownEditFormat as err:
         io.tool_error(str(err))
